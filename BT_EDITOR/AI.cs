@@ -18,15 +18,15 @@ public class AI : MonoBehaviour
 
 	private void Start()
 	{
-		var data = BehaviorTree.GetBTData(gameObject.name);
+		var getBT = BehaviorTree.GetBTData(gameObject.name);
 
-		foreach(var nodeData in data.dataList)
+		foreach(var data in getBT.dataList)
 		{
-			var node = new BTNode(nodeData, this);
+			var node = new BTNode(data, this);
 			_behaviorTree.Add(node);
 		}
 
-		foreach(var nodeData in data.dataList)
+		foreach(var nodeData in getBT.dataList)
 		{
 			if(nodeData.childIDs.Any() == false)
 				continue;
@@ -52,6 +52,7 @@ public class AI : MonoBehaviour
 	{
 		return (hp <= 0);
 	}
+
 	public void Death(bool isDeath)
 	{
 		if(isDeath == true)
@@ -62,6 +63,7 @@ public class AI : MonoBehaviour
 	{
 		return (playerDis <= AttackDis);
 	}
+
 	public void Attack(bool isAttack)
 	{
 		if(isAttack == true)
@@ -75,6 +77,7 @@ public class AI : MonoBehaviour
 
 		return isHit;
 	}
+
 	public bool IsDetect()
 	{
 		var isDetect = (playerDis <= DetectDis);
@@ -84,6 +87,7 @@ public class AI : MonoBehaviour
 
 		return isDetect;
 	}
+
 	public void Chase(bool isChase)
 	{
 		if(isChase == true)
@@ -100,6 +104,7 @@ public class AI : MonoBehaviour
 	{
 		return isUnItem;
 	}
+
 	public void Pharming(bool isUnItem)
 	{
 		if(isUnItem == false)
@@ -110,6 +115,7 @@ public class AI : MonoBehaviour
 	{
 		return isCheckPoint;
 	}
+
 	public void MoveToCkPoint(bool isCheckPoint)
 	{
 		if(isCheckPoint == false)

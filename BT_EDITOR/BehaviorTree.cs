@@ -14,6 +14,8 @@ namespace BT
 		Connect
 	};
 
+#if UNITY_EDITOR
+
 	public class BehaviorTree : EditorWindow
 	{
 		private enum MouseButtonState
@@ -24,25 +26,29 @@ namespace BT
 
 		private List<int> _uniqueList = new List<int>();
 		private List<NodeItem> _nodes = new List<NodeItem>();
+
 		private Vector2 _mousePos;
+
 		private NodeItem _prevSelect;
 		private NodeItem _curSelect;
+
 		private bool _isDrawing = false;
+		private bool _isLoaded = false;
 
 		private AI _target;
 
 		[MenuItem("Window/Behavior Tree")]
-		private static void Init()
+		private static void Initialize()
 		{
-			GetWindow<BehaviorTree>();
-
-			BehaviorTree window = (BehaviorTree)EditorWindow.GetWindowWithRect(typeof(BehaviorTree), new Rect(100, 100, 400, 400));
-
+			var window = GetWindowWithRect(typeof(BehaviorTree), new Rect(100, 100, 400, 400));
 			window.Show();
 		}
 
 		private void OnGUI()
 		{
+			if(_isLoaded && _nodes.Any() == false)
+				Load();
+
 			if(DeleteNode() == true)
 				return;
 
@@ -63,7 +69,6 @@ namespace BT
 				else
 				{
 					menu.AddItem(new GUIContent("Add Node"), false, ContextCallback, ActionState.AddNode);
-
 					_curSelect = null;
 				}
 
@@ -167,7 +172,11 @@ namespace BT
 
 			_uniqueList.Clear();
 			_uniqueList = data.dataList.Select(m => m.id).ToList();
+
 			LoadNodes(data.dataList);
+
+			_isLoaded = true;
+
 			Debug.Log($"Load Count : {_nodes.Count}");
 		}
 
@@ -177,7 +186,7 @@ namespace BT
 
 			if(Utils.HasJson(fileAddress) == false)
 			{
-				Debug.LogError("File is NULL!!");
+				Debug.LogError($"File is NULL!!\n{fileAddress}");
 				return null;
 			}
 
@@ -204,7 +213,7 @@ namespace BT
 				++id;
 			_uniqueList.Add(id);
 
-			var node = CreateInstance<NodeItem>();
+			var node = new NodeItem();
 			node.SetData(pos, id);
 			_nodes.Add(node);
 		}
@@ -213,7 +222,7 @@ namespace BT
 		{
 			foreach(var nodeData in nodeDatas)
 			{
-				var node = CreateInstance<NodeItem>();
+				var node = new NodeItem();
 				node.SetData(nodeData);
 				_nodes.Add(node);
 			}
@@ -357,6 +366,7 @@ namespace BT
 		#endregion
 	}
 
+#endif
 	[Serializable]
 	public class BTData
 	{
