@@ -1,14 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using BT;
 using UnityEngine;
-using BT;
 
 public class AI : MonoBehaviour
 {
 	private readonly float AttackDis = 5f;
 	private readonly float DetectDis = 10f;
-
-	private List<BTNode> _behaviorTree = new List<BTNode>();
+		
+	private BTNode _btRoot;
 
 	public int hp;
 	public float playerDis;
@@ -16,36 +14,17 @@ public class AI : MonoBehaviour
 	public bool isUnItem;
 	public bool isCheckPoint;
 
-	private void Start()
+	protected virtual void Start()
 	{
-		var getBT = BehaviorTree.GetBTData(gameObject.name);
-
-		foreach(var data in getBT.dataList)
-		{
-			var node = new BTNode(data, this);
-			_behaviorTree.Add(node);
-		}
-
-		foreach(var nodeData in getBT.dataList)
-		{
-			if(nodeData.childIDs.Any() == false)
-				continue;
-
-			var mine = _behaviorTree.Find(m => m.id == nodeData.id);
-			var childs = new List<BTNode>();
-
-			foreach(var id in nodeData.childIDs)
-			{
-				var child = _behaviorTree.Find(m => m.id == id);
-				childs.Add(child);
-				if(mine.bt == BTState.Root)
-					child.rootChild = true;
-			}
-			mine.SetChilds(childs);
-		}
-
-		_behaviorTree.RemoveAll(m => m.rootChild == false);
+		var controller = Utils.GetJson<NodeController>(gameObject.name);
+		
+		if(controller.Root != null)
+			_btRoot = new BTNode(controller, controller.Root, this);
 	}
+
+	#region DEFAULT_ACTION
+
+	#endregion
 
 	#region TestAction
 	public bool IsDeath()
@@ -88,7 +67,7 @@ public class AI : MonoBehaviour
 		return isDetect;
 	}
 
-	public void Chase(bool isChase)
+	public void Move(bool isChase)
 	{
 		if(isChase == true)
 			Debug.Log("추격");
@@ -125,24 +104,24 @@ public class AI : MonoBehaviour
 
 	private void Update()
 	{
-		if(Input.GetKeyDown(KeyCode.O))
-			Debug.Log($"count : {_behaviorTree.Count}");
+		//if(Input.GetKeyDown(KeyCode.O))
+		//	Debug.Log($"count : {_behaviorTree.Count}");
 
 		if(Input.GetKeyDown(KeyCode.P))
 		{
-			foreach(var node in _behaviorTree)
-			{
-				var check = node.ActiveSelf();
-				node.Action(check);
+//			foreach(var node in _behaviorTree)
+//			{
+//				var check = node.ActiveSelf();
+//				node.CallAction(check);
 
-				if(check == true)
-				{
-#if UNITY_EDITOR
-					Debug.Log($"curNode : {node.name}");
-#endif
-					break;
-				}
-			}
+//				if(check == true)
+//				{
+//#if UNITY_EDITOR
+//					Debug.Log($"curNode : {node.name}");
+//#endif
+//					break;
+//				}
+//			}
 		}
 	}
 }
