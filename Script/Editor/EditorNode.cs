@@ -6,23 +6,22 @@ using UnityEditor;
 using UnityEngine;
 using BT;
 
-public class EditorNode : Node
+public class EditorNode : BTNode
 {	
 	private readonly float DEFAULT_WIDTH = 100f;
-	private readonly float DEFAULT_HEIGHT = 130f;
-	private readonly float ROOT_HEIGHT = 70f;
+	private readonly float DEFAULT_HEIGHT = 50f;	
+	private readonly float LEAF_HEIGHT = 70f;
 	private readonly float CUSTOM_HEIGHT = 90f;
-
-	private List<EditorNode> _childs = new List<EditorNode>();
-
+	
 	public EditorNode parent { get; private set; }
 
-	public EditorNode(NodeController controller, Node node, EditorNode parent = null) 
+	/// <summary>
+	/// 트리 구조에 포함 된 상태
+	/// </summary>	
+	public void SetData(NodeController controller, Node node, EditorNode parent = null) 
 	{
-		id = node.id;
-		nodeName = node.nodeName;
-		checkName = node.checkName;
-		eventName = node.eventName;
+		id = node.id;			
+		actionName = node.actionName;
 		nodeType = node.nodeType;
 		actionType = node.actionType;
 		rect = node.rect;
@@ -36,19 +35,19 @@ public class EditorNode : Node
 			if(childData == null)
 				continue;
 
-			var child = new EditorNode(controller, childData, this);
-			_childs.Add(child);
+			var child = new EditorNode();
+			child.SetData(controller, childData, this);
+
+			_childs.Add(child);			
 		}
 	}
 
 	/// <summary>
 	/// 아직 트리구조에 포함 되지 않은 상태
 	/// </summary>	
-	public EditorNode(Vector2 pos) 
-	{
-		nodeName = "New Node";
-		checkName = "Check Method";
-		eventName = "Event Method";
+	public void SetData(Vector2 pos) 
+	{		
+		actionName = "Event Method";
 		rect = new Rect(pos.x, pos.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 		id = 0;
 	}
@@ -56,20 +55,25 @@ public class EditorNode : Node
 	public void DrawWindow()
 	{
 		rect = GUI.Window(id, rect, GetWindowData, id.ToString());
-		_childs.ForEach(child => child.DrawWindow());
+		foreach(var child in _childs)
+		{
+			if(child is EditorNode editorChild)
+				editorChild.DrawWindow();
+		}		
 	}
 
 	public void GetWindowData(int id)
 	{
 		EditorGUILayout.BeginVertical();
-
-		nodeName = EditorGUILayout.TextField(nodeName);
+				
 		nodeType = (BTState)EditorGUILayout.EnumPopup(nodeType);
 
 		switch(nodeType) 
 		{
 			case BTState.ROOT:
-				rect.height = ROOT_HEIGHT;
+			case BTState.SEQUENCE:
+			case BTState.SELECTOR:
+				rect.height = DEFAULT_HEIGHT;
 				break;
 
 			default:
@@ -77,15 +81,13 @@ public class EditorNode : Node
 
 				switch(actionType) 
 				{
-					case ActionType.CUSTOM:
-						checkName = EditorGUILayout.TextField(checkName);
-						eventName = EditorGUILayout.TextField(eventName);
-
-						rect.height = DEFAULT_HEIGHT;						
+					case ActionType.CUSTOM:						
+						actionName = EditorGUILayout.TextField(actionName);
+						rect.height = CUSTOM_HEIGHT;						
 						break;
 
 					default:
-						rect.height = CUSTOM_HEIGHT;
+						rect.height = LEAF_HEIGHT;
 						break;
 				}				
 				break;
@@ -100,11 +102,12 @@ public class EditorNode : Node
 
 	public void DrawArrow()
 	{
-		foreach(var child in _childs) 
+		foreach(var child in _childs)
 		{
 			BehaviorTreeRenderer.DrawArrow(rect, child.rect);
-			child.DrawArrow();
-		}		
+			if(child is EditorNode editorChild)
+				editorChild.DrawArrow();
+		}	
 	}
 
 	public void DeleteNode()
@@ -122,11 +125,15 @@ public class EditorNode : Node
 	{
 		if(_childs.Contains(node) == false) 
 		{
-			foreach(var child in _childs) 
+			foreach(var child in _childs)
 			{
-				if(child.RemoveChild(node))
-					return true;
+				if(child is EditorNode editorChild) 
+				{
+					if(editorChild.RemoveChild(node))
+						return true;
+				}
 			}
+
 			return false;
 		}
 
@@ -140,7 +147,7 @@ public class EditorNode : Node
 			return;
 
 		node.parent = this;
-		_childs.Add(node);
+		base.AddChild(node);		
 	}
 
 	public EditorNode FindSelectNode(Vector2 mousePos)
@@ -150,23 +157,15 @@ public class EditorNode : Node
 
 		foreach(var child in _childs)
 		{
-			var findSelect = child.FindSelectNode(mousePos);
-			if(findSelect != null)
-				return findSelect;
+			if(child is EditorNode editorChild)
+			{
+				var findSelect = editorChild.FindSelectNode(mousePos);
+				if(findSelect != null)
+					return findSelect;
+			}
 		}
 
 		return null;
-	}
-
-	public List<Node> GetAllNodes()
-	{
-		childIds = _childs.Select(child => child.id).ToList();
-
-		var list = new List<Node>();
-		list.Add(this);
-		_childs.ForEach(m => list.AddRange(m.GetAllNodes()));
-
-		return list;
 	}
 
 	private void SetDefautType()
@@ -195,9 +194,11 @@ public class EditorNode : Node
 
 		//동일 뎁스에서 좌측에 있을 수록 우선순위가 높은 노드
 		_childs = _childs.OrderBy(m => m.rect.x).ToList();
+
 		foreach(var child in _childs)
 		{
-			lastId = child.SetId(lastId + 1);
+			if(child is EditorNode editorChild)
+				lastId = editorChild.SetId(lastId + 1);
 		}
 
 		return lastId;
@@ -206,13 +207,13 @@ public class EditorNode : Node
 	public void PrintChild()
 	{
 		Debug.Log($"child count : {_childs.Count}");
-		_childs.ForEach(m => Debug.Log($"{m.nodeName}_{m.id}"));
+		_childs.ForEach(m => Debug.Log($"child id : {m.id}"));
 	}
 
 	public void PrintParent()
 	{
 		if(parent != null)
-			Debug.Log(parent.nodeName);
+			Debug.Log(parent.id);
 	}
 }
 

@@ -7,6 +7,13 @@ namespace BT
 {
 	#region ENUM
 
+	public enum NodeState 
+	{		
+		RUNNING,		
+		SUCCESS,		
+		FAILUER
+	}
+
 	public enum BTState
 	{
 		NONE,
@@ -49,37 +56,48 @@ namespace BT
 	[Serializable]
 	public class Node
 	{
-		public int id;
-		public string nodeName;
-		public string checkName;
-		public string eventName;
+		public int id;		
+		public string actionName;
 		public BTState nodeType;
 		public ActionType actionType;
-		public Rect rect;
 		public List<int> childIds = new List<int>();
+
+#if UNITY_EDITOR
+
+		public Rect rect;
+
+#endif
 	}
 
 	#endregion
 
 	public class BTNode : Node
 	{
-#if UNITY_EDITOR
-
-		public string name;
-
-#endif
-		private delegate bool Check();
-		private delegate void NodeAction(bool isCheck);
-
-		private Check _isCheck;
+		private delegate NodeState NodeAction();
+		
 		private NodeAction _action;		
-		private List<BTNode> _childs = new List<BTNode>();				
+		protected List<BTNode> _childs = new List<BTNode>();
 
-		public BTNode(NodeController controller, Node data, AI ai)
+		protected void AddChild(BTNode child) 
 		{
-#if UNITY_EDITOR
-			name = data.nodeName;
-#endif
+			if(_childs.Contains(child))
+				return;
+
+			childIds.Add(child.id);
+			_childs.Add(child);
+		}
+
+		public void RemoveChild(BTNode child) 
+		{
+			if(_childs.Contains(child) == false)
+				return;
+
+			childIds.Remove(child.id);
+			_childs.Remove(child);
+		}
+
+		public void SetData(NodeController controller, Node data, AI ai)
+		{
 			id = data.id;			
 			nodeType = data.nodeType;
 
@@ -90,8 +108,7 @@ namespace BT
 					break;
 
 				case ActionType.ATTACK:
-					_action = ai.Attack;
-					_isCheck = ai.IsAttack;
+					_action = ai.Attack;					
 					break;
 
 				case ActionType.MOVE:
@@ -99,20 +116,17 @@ namespace BT
 					break;
 
 				case ActionType.HIT:
-					_isCheck = ai.IsHit;
+					_action = ai.Hit;
 					break;
 
 				case ActionType.DEATH:
-					_action = ai.Death;
-					_isCheck = ai.IsDeath;
+					_action = ai.Death;					
 					break;
 
-				case ActionType.CUSTOM:
-					if(string.IsNullOrEmpty(data.checkName) == false)
-						_isCheck = (Check)Delegate.CreateDelegate(typeof(Check), ai, GetType().GetMethod(data.checkName));
+				case ActionType.CUSTOM:					
 
-					if(string.IsNullOrEmpty(data.eventName) == false)
-						_action = (NodeAction)Delegate.CreateDelegate(typeof(NodeAction), ai, GetType().GetMethod(data.checkName));
+					if(string.IsNullOrEmpty(data.actionName) == false)
+						_action = (NodeAction)Delegate.CreateDelegate(typeof(NodeAction), ai, GetType().GetMethod(data.actionName));
 					break;
 			}
 
@@ -122,61 +136,57 @@ namespace BT
 
 				if(child == null)
 					continue;
-								
-				var node = new BTNode(controller, child, ai);
-				_childs.Add(node);
+
+				var node = new BTNode();
+				node.SetData(controller, child, ai);
+
+				AddChild(node);				
 			}
 		}
 
-		public void SetChilds(List<BTNode> childs)
+		public NodeState GetState()
 		{
-			_childs = childs;
-		}
-
-		public bool ActiveSelf()
-		{
-			var active = false;
+			var state = NodeState.FAILUER;
 			switch(nodeType)
 			{
 				case BTState.ROOT:
-				case BTState.NONE:
-					active = (_isCheck == null) ? false : _isCheck.Invoke();
-					break;
-
 				case BTState.SELECTOR:
 					foreach(var child in _childs)
 					{
-						var check = child.ActiveSelf();
-						if(check == true)
-						{
-							active = (_isCheck == null) ? true : (bool)_isCheck.Invoke();
-							child.CallAction(active);
-							return active;
-						}
-					}
-					active = false;
+						var childState = child.GetState();
+
+						if(state != NodeState.FAILUER)
+							state = childState;
+					}					
 					break;
 
 				case BTState.SEQUENCE:
 					foreach(var child in _childs)
 					{
-						var check = child.ActiveSelf();
-						if(check == false)
-						{
-							child.CallAction(check);
-							return false;
-						}
+						var childState = child.GetState();
+
+						if(childState == NodeState.FAILUER)
+							break;
 					}
-					active = (_isCheck == null) ? true : _isCheck.Invoke();
+					break;
+
+				case BTState.NONE:
+					if(_action != null)
+						state = _action.Invoke();
 					break;
 			}
 
-			return active;
+			return state;
 		}
 
-		public void CallAction(bool check)
-		{
-			_action?.Invoke(check);
+		public List<Node> GetAllNodes()
+		{			
+			var list = new List<Node>();
+			list.Add(this);
+
+			_childs.ForEach(child => list.AddRange(child.GetAllNodes()));
+
+			return list;
 		}
 	}
 }

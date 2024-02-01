@@ -152,9 +152,12 @@ namespace BT
 
 			_root = null;
 			var controller = Utils.GetJson<NodeController>(_target.gameObject.name);
-						
-			if(controller.Root != null)
-				_root = new EditorNode(controller, controller.Root);
+
+			if(controller.Root != null) 
+			{
+				_root = new EditorNode();
+				_root.SetData(controller, controller.Root);
+			}
 
 			if(_root != null) 
 			{
@@ -338,7 +341,8 @@ namespace BT
 
 		private void CreateNode(Vector2 pos)
 		{
-			var newItem = new EditorNode(pos);
+			var newItem = new EditorNode();
+			newItem.SetData(pos);
 
 			if(_root == null)
 			{
