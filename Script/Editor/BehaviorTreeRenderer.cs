@@ -157,11 +157,7 @@ namespace BT
 			{
 				_root = new EditorNode();
 				_root.SetData(controller, controller.Root);
-			}
-
-			if(_root != null) 
-			{
-				ResetTreeNodesIds();				
+				ResetTreeNodesIds();
 				Debug.Log($"Load Count : {_root.GetAllNodes().Count}");
 			}
 		}
@@ -268,9 +264,9 @@ namespace BT
 				fontSize = 10,
 				richText = true,
 			};
-
+						
 			var fontPos = new Vector2(endPos.x - 5, endPos.y - 5);
-			Handles.Label(fontPos, "<color=#ffffff>▼</color>", font);
+			Handles.Label(fontPos, "<color=#ffffff>●</color>", font);
 		}
 
 		private void ConnectNode()
@@ -360,7 +356,7 @@ namespace BT
 		private void ResetTreeNodesIds() 
 		{
 			var nextId = (_root == null) ? 0 : _root.SetId() + 1;
-
+			
 			foreach(var temp in _tempNodes)
 			{
 				temp.SetId(nextId);

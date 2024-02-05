@@ -194,11 +194,15 @@ public class EditorNode : BTNode
 
 		//동일 뎁스에서 좌측에 있을 수록 우선순위가 높은 노드
 		_childs = _childs.OrderBy(m => m.rect.x).ToList();
-
+		childIds.Clear();
 		foreach(var child in _childs)
 		{
-			if(child is EditorNode editorChild)
-				lastId = editorChild.SetId(lastId + 1);
+			if(child is EditorNode editorChild) 			
+			{
+				var curId = lastId + 1;
+				childIds.Add(curId);
+				lastId = editorChild.SetId(curId);
+			}
 		}
 
 		return lastId;

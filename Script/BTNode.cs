@@ -25,11 +25,13 @@ namespace BT
 	public enum ActionType
 	{
 		NONE,
-		IDLE,
+		HP_CHECK,
+		DEATH,
+		HIT,
+		DETECTOR,
 		ATTACK,
 		MOVE,
-		HIT,
-		DEATH,
+		IDLE,
 		CUSTOM
 	}
 
@@ -103,8 +105,20 @@ namespace BT
 
 			switch(data.actionType)
 			{
-				case ActionType.IDLE:
-					_action = ai.Idle;
+				case ActionType.HP_CHECK:
+					_action = ai.HpCheck;
+					break;
+
+				case ActionType.DEATH:
+					_action = ai.Death;
+					break;
+
+				case ActionType.HIT:
+					_action = ai.Hit;
+					break;
+
+				case ActionType.DETECTOR:
+					_action = ai.Detector;
 					break;
 
 				case ActionType.ATTACK:
@@ -113,20 +127,15 @@ namespace BT
 
 				case ActionType.MOVE:
 					_action = ai.Move;
+					break;				
+
+				case ActionType.IDLE:
+					_action = ai.Idle;
 					break;
 
-				case ActionType.HIT:
-					_action = ai.Hit;
-					break;
-
-				case ActionType.DEATH:
-					_action = ai.Death;					
-					break;
-
-				case ActionType.CUSTOM:					
-
+				case ActionType.CUSTOM:
 					if(string.IsNullOrEmpty(data.actionName) == false)
-						_action = (NodeAction)Delegate.CreateDelegate(typeof(NodeAction), ai, GetType().GetMethod(data.actionName));
+						_action = (NodeAction)Delegate.CreateDelegate(typeof(NodeAction), ai, ai.GetType().GetMethod(data.actionName));
 					break;
 			}
 
@@ -155,8 +164,11 @@ namespace BT
 					{
 						var childState = child.GetState();
 
-						if(state != NodeState.FAILUER)
+						if(childState != NodeState.FAILUER) 
+						{
 							state = childState;
+							break;
+						}
 					}					
 					break;
 
@@ -167,12 +179,22 @@ namespace BT
 
 						if(childState == NodeState.FAILUER)
 							break;
+
+						state = childState;
 					}
 					break;
 
 				case BTState.NONE:
 					if(_action != null)
 						state = _action.Invoke();
+
+					foreach(var child in _childs)
+					{
+						var childState = child.GetState();
+
+						if(state != NodeState.FAILUER)
+							state = childState;
+					}
 					break;
 			}
 
