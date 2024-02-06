@@ -79,7 +79,7 @@ namespace BT
 		
 		private NodeAction _action;		
 		protected List<BTNode> _childs = new List<BTNode>();
-
+		
 		protected void AddChild(BTNode child) 
 		{
 			if(_childs.Contains(child))
@@ -188,13 +188,16 @@ namespace BT
 					if(_action != null)
 						state = _action.Invoke();
 
-					foreach(var child in _childs)
+					if(state != NodeState.FAILUER) 
 					{
-						var childState = child.GetState();
+						foreach(var child in _childs)
+						{
+							var childState = child.GetState();
 
-						if(state != NodeState.FAILUER)
-							state = childState;
-					}
+							if(state != NodeState.FAILUER)
+								state = childState;
+						}
+					}					
 					break;
 			}
 

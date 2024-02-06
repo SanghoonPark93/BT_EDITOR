@@ -58,7 +58,7 @@ public abstract class AI : MonoBehaviour
 		if(_playList.Contains(key))
 			return;
 
-		_playList.Add(key);
+		_playList.Add(key);		
 	}
 
 	protected void EndAction(string key) 
@@ -66,6 +66,6 @@ public abstract class AI : MonoBehaviour
 		if(_playList.Contains(key) == false)
 			return;
 
-		_playList.Remove(key);
+		_playList.Remove(key);		
 	}
 }

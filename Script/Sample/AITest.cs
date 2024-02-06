@@ -6,9 +6,11 @@ using UnityEngine.Events;
 public class AITest : AI
 {
 	private Animator _anim;
+	
+	private bool _isHit;
 
 	[SerializeField]
-	private float _hp;
+	private float _hp;	
 
 	#region UNITY_EVENT
 
@@ -24,7 +26,16 @@ public class AITest : AI
 		if(Input.GetKeyDown(KeyCode.O))
 			Debug.Log($"count : {_btRoot.GetAllNodes().Count}");
 
+		//임시 테스트용
+		if(Input.GetKeyDown(KeyCode.P))
+			_isHit = true;
+
 		base.Update();
+	}
+
+	protected virtual void OnTriggerEnter(Collider other)
+	{
+
 	}
 
 	#endregion
@@ -32,7 +43,9 @@ public class AITest : AI
 	private void Initialize() 
 	{
 		_anim = GetComponent<Animator>();
+		
 		_hp = 5f;
+		_isHit = false;
 	}
 
 	public override NodeState HpCheck()
@@ -46,20 +59,22 @@ public class AITest : AI
 
 		if(AlreadyCheck(key) == false) 
 		{
-			Debug.Log(key);
-
 			_isStop = true;
 
+			Debug.Log(key);
 			_stateCache = NodeState.RUNNING;
-
-			_anim.SetTrigger(key);
+			StartAction(key);
+						
+			GetComponent<BoxCollider>().enabled = false;
+			GetComponent<Rigidbody>().useGravity = false;
 			
-			//사망 애니메이션 시간이 약 6.4f
-			StartCoroutine(DelayState(6.4f, ()=>
+			_anim.SetTrigger(key);
+						
+			StartCoroutine(DelayState(6.4f, () => 
 			{
-				EndAction(key);
+				EndAction(key); 
 				_stateCache = NodeState.SUCCESS;
-			}));			
+			}));
 		}		
 
 		return _stateCache;
@@ -67,9 +82,30 @@ public class AITest : AI
 
 	public override NodeState Hit()
 	{
-		//Debug.Log("Hit");
+		if(_isHit)
+		{
+			var key = "Hit";
 
-		return NodeState.SUCCESS;
+			if(AlreadyCheck(key) == false)
+			{
+				StartAction(key);
+				Debug.Log(key);
+				_stateCache = NodeState.SUCCESS;
+
+				--_hp;
+				_anim.SetBool(key, true);
+
+				StartCoroutine(DelayState(1.3f, () =>
+				{
+					EndAction(key);
+					_isHit = false;
+					_anim.SetBool(key, false);
+					_stateCache = NodeState.FAILUER;
+				}));
+			}			
+		}				
+
+		return _stateCache;
 	}
 
 	public override NodeState Detector()
