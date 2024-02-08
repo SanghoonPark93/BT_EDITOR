@@ -40,4 +40,13 @@ public class Utils
 	}
 
 	#endregion
+
+	public static void EditorLog(string log) 
+	{
+#if UNITY_EDITOR
+
+		Debug.Log(log);
+
+#endif
+	}
 }

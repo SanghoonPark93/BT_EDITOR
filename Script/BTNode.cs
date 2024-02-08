@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace BT
 {
 	#region ENUM
 
+	/// <summary>
+	/// 우선순위 낮은 순
+	/// </summary>
 	public enum NodeState 
 	{		
-		RUNNING,		
+		FAILUER,
 		SUCCESS,		
-		FAILUER
+		RUNNING		
 	}
 
 	public enum BTState
@@ -180,7 +182,8 @@ namespace BT
 						if(childState == NodeState.FAILUER)
 							break;
 
-						state = childState;
+						if((int)state < (int)childState)
+							state = childState;
 					}
 					break;
 
@@ -192,10 +195,7 @@ namespace BT
 					{
 						foreach(var child in _childs)
 						{
-							var childState = child.GetState();
-
-							if(state != NodeState.FAILUER)
-								state = childState;
+							child.GetState();
 						}
 					}					
 					break;

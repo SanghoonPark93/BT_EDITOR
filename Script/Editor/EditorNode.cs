@@ -1,10 +1,9 @@
 ﻿#if UNITY_EDITOR
 
-using System.Collections.Generic;
+using BT;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using BT;
 
 public class EditorNode : BTNode
 {	

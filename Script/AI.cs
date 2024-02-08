@@ -7,10 +7,19 @@ public abstract class AI : MonoBehaviour
 	protected BTNode _btRoot;
 	protected NodeState _stateCache;
 
+	/// <summary>
+	/// 업데이트문을 멈추고싶을경우 true
+	/// </summary>
 	protected bool _isStop;
 
-	private List<string> _playList = new();
+	/// <summary>
+	/// 업데이트문에 딜레이를 주고싶을 경우 사용
+	/// </summary>
+	private float _delayUpdate = -1f;
+	private float _delayDef;
 
+	private List<string> _playList = new();
+		
 	#region TestAction
 
 	public abstract NodeState HpCheck();	
@@ -29,9 +38,9 @@ public abstract class AI : MonoBehaviour
 
 	#endregion
 
-	protected virtual void Start()
+	public virtual void Initialize(string jsonName)
 	{
-		var controller = Utils.GetJson<NodeController>(gameObject.name);
+		var controller = Utils.GetJson<NodeController>(jsonName);
 
 		if(controller.Root != null)
 		{
@@ -42,10 +51,26 @@ public abstract class AI : MonoBehaviour
 
 	protected virtual void Update()
 	{
-		if(_isStop)
+		if(_isStop || _btRoot == null)
 			return;
 
-		_btRoot.GetState();
+		if(_delayUpdate > -1) 
+		{
+			_delayUpdate -= Time.deltaTime;
+			
+			if(_delayUpdate > 0)
+				return;
+
+			_delayUpdate = _delayDef;
+		}
+				
+		_btRoot.GetState();		
+	}
+
+	protected void SetDelayTime(float delay)
+	{
+		_delayUpdate = delay;
+		_delayDef = delay;
 	}
 
 	protected bool AlreadyCheck(string key) 
