@@ -35,7 +35,7 @@ public class SampleManager : MonoSingleton<SampleManager>
 		{
 			var camTransfom = Camera.main.transform;
 			var bulletPos = new Vector3(camTransfom.position.x, camTransfom.position.y - 6.5f, camTransfom.position.z);
-			Instantiate(_bulletPrefab, bulletPos, new Quaternion(0, camTransfom.rotation.y, 0, 0));
+			Instantiate(_bulletPrefab, bulletPos, Quaternion.LookRotation(camTransfom.parent.position - bulletPos));
 		}
 	}
 

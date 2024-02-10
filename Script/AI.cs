@@ -63,8 +63,13 @@ public abstract class AI : MonoBehaviour
 
 			_delayUpdate = _delayDef;
 		}
-				
-		_btRoot.GetState();		
+
+		UpdateBody();
+	}
+
+	protected virtual void UpdateBody() 
+	{
+		_btRoot.GetState();
 	}
 
 	protected void SetDelayTime(float delay)

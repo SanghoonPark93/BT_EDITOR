@@ -60,7 +60,7 @@ public abstract class InteractionObject : MonoBehaviour, IObjectType
             if(_typeFilter.HasFlag(obj.ObjType()) == false)
                 return;
             
-            TriggerEnterListener(obj);
+            TriggerEnter(obj);
         }
     }
 
@@ -71,17 +71,17 @@ public abstract class InteractionObject : MonoBehaviour, IObjectType
             if(_typeFilter.HasFlag(obj.ObjType()) == false)
                 return;
 
-            TriggerExitListener(obj);
+            TriggerExit(obj);
         }
     }
 
-    protected virtual void TriggerEnterListener(IObjectType other)
+    protected virtual void TriggerEnter(IObjectType other)
     {
         if(_interactionList.Contains(other) == false)
             _interactionList.Add(other);
     }
 
-    protected virtual void TriggerExitListener(IObjectType other)
+    protected virtual void TriggerExit(IObjectType other)
     {
         if(_interactionList.Contains(other))
             _interactionList.Remove(other);

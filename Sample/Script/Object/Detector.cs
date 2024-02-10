@@ -9,22 +9,47 @@ public class Detector : InteractionObject
 	private List<IObjectType> _aiList = new();
 
 	private List<IObjectType> _playerList = new();
-	
-	public List<IObjectType> aiList => _aiList;
 
-	public List<IObjectType> playerList => _playerList;
+	public float radius { get; private set; }
+	
+	public bool Contains(GameObject obj) 
+	{
+		return (_interactionList.Any(m => (m as MonoBehaviour).gameObject == obj));
+	}
+
+	public List<IObjectType> aiList 
+	{
+		get 
+		{
+			_aiList.RemoveAll(m => m == null || (m as MonoBehaviour) == null);
+			return _aiList;
+		}
+	}	
+
+	public List<IObjectType> playerList 
+	{
+		get 
+		{			
+			_playerList.RemoveAll(m => m == null || (m as MonoBehaviour) == null);
+			return _playerList;
+		}
+	}	
 		
-	public bool isOn => _aiList.Any() || _playerList.Any();
+	public bool isOn => aiList.Any() || playerList.Any();
 
 	protected override void Awake()
 	{
+		radius = GetComponent<SphereCollider>().radius;
+		
 		_typeFilter = InteractionType.PLAYER | InteractionType.AI;
 	}
 
-	protected override void TriggerEnterListener(IObjectType other)
+	protected override void TriggerEnter(IObjectType other)
 	{
 		if(transform.parent.gameObject == (other as MonoBehaviour).gameObject)
 			return;
+
+		base.TriggerEnter(other);
 
 		switch(other.ObjType())
 		{
@@ -40,8 +65,10 @@ public class Detector : InteractionObject
 		}		
 	}
 
-	protected override void TriggerExitListener(IObjectType other)
+	protected override void TriggerExit(IObjectType other)
 	{
+		base.TriggerExit(other);
+
 		switch(other.ObjType())
 		{
 			case InteractionType.PLAYER:
@@ -82,5 +109,22 @@ public class Detector : InteractionObject
 		}
 
 		return null;
+	}
+
+	public bool IsEndPos(float squareDis)
+	{
+		return (squareDis <= 50f);
+	}
+
+	public void RemoveObj(IObjectType type) 
+	{
+		if(_aiList.Contains(type))
+			_aiList.Remove(type);
+
+		if(_playerList.Contains(type))
+			_playerList.Remove(type);
+
+		if(_interactionList.Contains(type))
+			_interactionList.Remove(type);
 	}
 }
