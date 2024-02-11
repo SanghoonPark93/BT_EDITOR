@@ -26,7 +26,14 @@ public abstract class InteractionObject : MonoBehaviour, IObjectType
 
     protected InteractionType _typeFilter;
 
-    public List<IObjectType> interactionList => _interactionList;
+    public List<IObjectType> interactionList 
+    {
+        get 
+        {
+            _interactionList.RemoveAll(m => m == null || (m as MonoBehaviour) == null);
+            return _interactionList;
+        } 
+    }
 
     protected virtual void Awake() 
     {

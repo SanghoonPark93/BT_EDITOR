@@ -14,7 +14,7 @@ public class Detector : InteractionObject
 	
 	public bool Contains(GameObject obj) 
 	{
-		return (_interactionList.Any(m => (m as MonoBehaviour).gameObject == obj));
+		return (interactionList.Any(m => (m as MonoBehaviour).gameObject == obj));
 	}
 
 	public List<IObjectType> aiList 

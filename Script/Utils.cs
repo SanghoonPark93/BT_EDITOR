@@ -1,52 +1,55 @@
 using System.IO;
 using UnityEngine;
 
-public class Utils
+namespace BT.Util
 {
-	#region JSON
-
-	public static T GetJson<T>(string fileName)
+	public class Utils
 	{
-		var fileAddress = GetJsonAddress(fileName);
+		#region JSON
 
-		if(HasJson(fileAddress) == false)
+		public static T GetJson<T>(string fileName)
 		{
-			Debug.LogError($"File is NULL!!\n{fileAddress}");
-			return default(T);
+			var fileAddress = GetJsonAddress(fileName);
+
+			if(HasJson(fileAddress) == false)
+			{
+				Debug.LogError($"File is NULL!!\n{fileAddress}");
+				return default(T);
+			}
+
+			var load = ReadAllText(fileAddress);
+			return JsonUtility.FromJson<T>(load);
 		}
 
-		var load = ReadAllText(fileAddress);
-		return JsonUtility.FromJson<T>(load);
-	}
+		public static string GetJsonAddress(string fileName)
+		{
+			return $"{Application.dataPath}/{fileName}.json";
+		}
 
-	public static string GetJsonAddress(string fileName)
-	{
-		return $"{Application.dataPath}/{fileName}.json";
-	}
+		public static bool HasJson(string fileAddress)
+		{
+			return new FileInfo(fileAddress).Exists;
+		}
 
-	public static bool HasJson(string fileAddress)
-	{
-		return new FileInfo(fileAddress).Exists;
-	}
+		public static string ReadAllText(string fileAddress)
+		{
+			return File.ReadAllText(fileAddress);
+		}
 
-	public static string ReadAllText(string fileAddress)
-	{
-		return File.ReadAllText(fileAddress);
-	}
+		public static void WriteAllText(string fileAddress, string json)
+		{
+			File.WriteAllText(fileAddress, json);
+		}
 
-	public static void WriteAllText(string fileAddress, string json)
-	{
-		File.WriteAllText(fileAddress, json);
-	}
+		#endregion
 
-	#endregion
-
-	public static void EditorLog(string log) 
-	{
+		public static void EditorLog(string log)
+		{
 #if UNITY_EDITOR
 
-		Debug.Log(log);
+			Debug.Log(log);
 
 #endif
+		}
 	}
 }
