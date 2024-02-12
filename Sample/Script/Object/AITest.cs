@@ -19,6 +19,13 @@ public class AITest : AI, IObjectType
 		IDLE
 	}
 
+#if UNITY_EDITOR
+
+	[SerializeField]
+	private bool _showLog;
+
+#endif
+
 	[SerializeField]
 	private float _hp;
 
@@ -54,7 +61,7 @@ public class AITest : AI, IObjectType
 
 	public MonoBehaviour target => _target;
 
-	public FSMType parentState { get; private set; }
+	public FSMType fsmState { get; private set; }
 
 	public override void Initialize(string jsonName)
 	{
@@ -89,19 +96,26 @@ public class AITest : AI, IObjectType
 		//우두머리가 있을 경우 우두머리의 행동패턴을 따라감
 		if(_head != null)
 		{
+			var parentState = _head.fsmState;
+			var headTarget = _head.target;
+
+			var isFirstTurn = (fsmState == parentState) ? false : true;
+			fsmState = parentState;
+
 			if(isAlive == false) 
 			{
-				Death();
+				Death(isFirstTurn);
 				return;
 			}
 
-			if(Hit() != NodeState.FAILUER)
-				return;
+			if(Hit(isFirstTurn) != NodeState.FAILUER)
+				return;			
 
-			var parentState = _head.parentState;
-			var headTarget = _head.target;
-
-			if(headTarget != null) 
+			if(headTarget == null)
+			{
+				StopMove();
+			}
+			else 
 			{
 				_target = headTarget;
 
@@ -117,19 +131,16 @@ public class AITest : AI, IObjectType
 			{
 				case FSMType.ATTACK:
 					if(_target != null)
-						Attack();
+						Attack(isFirstTurn);
 					break;
 
 				case FSMType.MOVE:
 					if(_target != null)
-						Move();
+						Move(isFirstTurn);
 					break;
 
-				case FSMType.IDLE:
-					_anim.SetBool("Move", false);
-					_anim.SetBool("Hit", false);
-					_anim.SetBool("Attack", false);
-					Idle();
+				case FSMType.IDLE:					
+					Idle(isFirstTurn);
 					break;
 			}			
 
@@ -143,49 +154,49 @@ public class AITest : AI, IObjectType
 		base.UpdateBody();
 	}
 
-	public override NodeState HpCheck()
+	public override NodeState HpCheck(bool isFirstTurn)
 	{			
 		return (isAlive) ? NodeState.FAILUER : NodeState.SUCCESS;
 	}
 
-	public override NodeState Death()
+	public override NodeState Death(bool isFirstTurn)
 	{
 		var key = "Death";
+		
+		_stateCache = NodeState.RUNNING;
 
-		var alreadyCheck = AlreadyCheck(key);
-		if(alreadyCheck == false) 
+		if(isFirstTurn) 
 		{
 			_isStop = true;
 
-			Utils.EditorLog(key);
-			
-			_stateCache = NodeState.RUNNING;
-			StartAction(key);
-						
+			if(_showLog)
+				Utils.EditorLog(key);
+
 			GetComponent<BoxCollider>().enabled = false;
 			GetComponent<Rigidbody>().useGravity = false;
-			
 			_anim.SetTrigger(key);
-						
-			StartCoroutine(DelayState(6.4f, () => 
-			{				
-				EndAction(key); 
+
+			StartCoroutine(DelayState(6.4f, () =>
+			{
 				_stateCache = NodeState.SUCCESS;
 			}));
-		}		
+		}
 
-		return (alreadyCheck) ? _stateCache : NodeState.FAILUER;
+		return _stateCache;
 	}
 
 	#region HP
 
-	public override NodeState Hit()
+	public override NodeState Hit(bool isFirstTurn)
 	{
 		var isHit = _hitInfoQueue.Any();
+
 		if(isHit)
 		{
 			var key = "Hit";
-			Utils.EditorLog(key);
+
+			if(_showLog)
+				Utils.EditorLog(key);
 						
 			_stateCache = NodeState.SUCCESS;
 			
@@ -220,23 +231,30 @@ public class AITest : AI, IObjectType
 
 	#endregion
 
-	public override NodeState Detector()
+	public override NodeState Detector(bool isFirstTurn)
 	{
 		var isOn = _detector.isOn;
 
 		if(isOn)
-			Utils.EditorLog("Detector");
+		{
+			if(_showLog)
+				Utils.EditorLog("Detector");
+		}
+		else 
+		{
+			_target = null;
+		}
 
 		return isOn ? NodeState.RUNNING : NodeState.FAILUER;
 	}
 
-	public override NodeState Attack()
+	public override NodeState Attack(bool isFirstTurn)
 	{
 		if(_isBlock)
 			return NodeState.FAILUER;
 
 		var key = "Attack";
-		var isOn = _detector.playerList.Any();
+		var isOn = _detector.playerList.Any() || (_target != null);
 		if(isOn)
 		{
 			if(_target == null) 
@@ -256,7 +274,7 @@ public class AITest : AI, IObjectType
 				if(_detector.IsEndPos(distance))
 				{
 					StopMove(false);
-					parentState = FSMType.ATTACK;
+					fsmState = FSMType.ATTACK;
 					_stateCache = NodeState.SUCCESS;
 					
 					var dir = _target.transform.position - transform.position;
@@ -276,16 +294,17 @@ public class AITest : AI, IObjectType
 
 	#region MOVE
 
-	public override NodeState Move()
+	public override NodeState Move(bool isFirstTurn)
 	{
 		var hasTarget = (_target != null);
 
-		if(hasTarget && _isBlock == false) 
+		if(isFirstTurn && hasTarget) 
 		{
-			Utils.EditorLog("Move");
-			parentState = FSMType.MOVE;
-						
-			_isBlock = true;
+			if(_showLog)
+				Utils.EditorLog("Move");
+
+			fsmState = FSMType.MOVE;
+			_anim.SetBool("Move", true);
 			StartCoroutine(StartMove(50f));
 		}
 		
@@ -312,14 +331,11 @@ public class AITest : AI, IObjectType
 		while(_target != null)
 		{
 			//디텍터 범위 안에 없거나 도착지점에 도달했다면 반복문 탈출
-			if(_head == null && (_detector.Contains(_target.gameObject) == false || _detector.IsEndPos(distance)))
+			if((_head == null && _detector.Contains(_target.gameObject) == false) || _detector.IsEndPos(distance))
 			{				
 				StopMove();
 				break;
 			}
-
-			if(_anim.GetBool(key) == false)
-				_anim.SetBool(key, true);
 
 			_navi.SetDestination(_target.transform.position);
 			distance = (_target.transform.position - transform.position).sqrMagnitude;
@@ -335,17 +351,26 @@ public class AITest : AI, IObjectType
 
 	#endregion
 
-	public override NodeState Idle()
+	public override NodeState Idle(bool isFirstTurn)
 	{
-		Utils.EditorLog("Idle");
-		parentState = FSMType.IDLE;
+		if(isFirstTurn) 
+		{
+			if(_showLog)
+				Utils.EditorLog("Idle");
+
+			_anim.SetBool("Move", false);
+			_anim.SetBool("Hit", false);
+			_anim.SetBool("Attack", false);
+			fsmState = FSMType.IDLE;
+		}
+		
 		return NodeState.SUCCESS;
 	}
 
 
 	#region CLUSTERING
 
-	public NodeState Clustering() 
+	public NodeState Clustering(bool isFirstTurn) 
 	{
 		if(_isBlock == false) 
 		{
@@ -356,7 +381,8 @@ public class AITest : AI, IObjectType
 				var distance = (_target.transform.position - transform.position).sqrMagnitude;
 				if(_detector.IsEndPos(distance))
 				{
-					Utils.EditorLog("Clustering");
+					if(_showLog)
+						Utils.EditorLog("Clustering");
 
 					_detector.RemoveObj(_target as IObjectType);
 					StopMove();

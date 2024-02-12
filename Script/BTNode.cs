@@ -65,7 +65,7 @@ namespace BT
 		public BTState nodeType;
 		public ActionType actionType;
 		public List<int> childIds = new List<int>();
-
+		
 #if UNITY_EDITOR
 
 		public Rect rect;
@@ -77,11 +77,13 @@ namespace BT
 
 	public class BTNode : Node
 	{
-		private delegate NodeState NodeAction();
+		private delegate NodeState NodeAction(bool isFirstTurn);
 		
 		private NodeAction _action;		
 		protected List<BTNode> _childs = new List<BTNode>();
-		
+
+		public bool isFirstTurn { get; private set; }
+
 		protected void AddChild(BTNode child) 
 		{
 			if(_childs.Contains(child))
@@ -104,6 +106,7 @@ namespace BT
 		{
 			id = data.id;			
 			nodeType = data.nodeType;
+			isFirstTurn = true;
 
 			switch(data.actionType)
 			{
@@ -158,46 +161,63 @@ namespace BT
 		public NodeState GetState()
 		{
 			var state = NodeState.FAILUER;
+			var isEnd = false;
 			switch(nodeType)
 			{
 				case BTState.ROOT:
 				case BTState.SELECTOR:
 					foreach(var child in _childs)
 					{
+						if(isEnd) 
+						{
+							isFirstTurn = true;
+							continue;
+						}
+
 						var childState = child.GetState();
 
 						if(childState != NodeState.FAILUER) 
 						{
 							state = childState;
-							break;
+							isEnd = true;							
 						}
 					}					
 					break;
 
-				case BTState.SEQUENCE:
+				case BTState.SEQUENCE:					
 					foreach(var child in _childs)
 					{
-						var childState = child.GetState();
+						if(isEnd) 
+						{
+							isFirstTurn = true;
+							continue;
+						}
 
-						if(childState == NodeState.FAILUER)
-							break;
+						var childState = child.GetState();
 
 						if((int)state < (int)childState)
 							state = childState;
+
+						if(childState == NodeState.FAILUER)
+							isEnd = true;
 					}
 					break;
 
 				case BTState.NONE:
 					if(_action != null)
-						state = _action.Invoke();
+						state = _action.Invoke(isFirstTurn);
 
-					if(state != NodeState.FAILUER) 
+					if(state == NodeState.FAILUER)
+					{
+						isFirstTurn = true; // 초기화
+					}
+					else 
 					{
 						foreach(var child in _childs)
 						{
 							child.GetState();
 						}
-					}					
+					}
 					break;
 			}
 
