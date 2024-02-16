@@ -6,10 +6,7 @@ using UnityEngine;
 public class SampleManager : MonoSingleton<SampleManager>
 {
 	[SerializeField]
-	private List<AI> _aiList;
-
-	[SerializeField]
-	private Weapon _bulletPrefab;
+	private List<AI> _aiList;	
 
 	private List<AITest> _aiObserver = new();
 
@@ -29,14 +26,10 @@ public class SampleManager : MonoSingleton<SampleManager>
 		_aiList.ForEach(m => m.Initialize("AI"));
 	}
 
-	private void OnGUI()
+	private void Update()
 	{
-		if(GUI.Button(new Rect(0, 0, 100, 20), "Attack"))
-		{
-			var camTransfom = Camera.main.transform;
-			var bulletPos = new Vector3(camTransfom.position.x, camTransfom.position.y - 6.5f, camTransfom.position.z);
-			Instantiate(_bulletPrefab, bulletPos, Quaternion.LookRotation(camTransfom.parent.position - bulletPos));
-		}
+		if(Input.GetKeyDown(KeyCode.P))
+			Cursor.lockState = (Cursor.lockState == CursorLockMode.Locked) ? CursorLockMode.None: CursorLockMode.Locked;
 	}
 
 	public void RequestClustering(AITest ai, AITest target)
@@ -58,6 +51,9 @@ public class SampleManager : MonoSingleton<SampleManager>
 			target.ResponseClustering(head, child);
 			return;
 		}
+
+		_aiObserver.RemoveAll(m => m == ai);
+		_aiObserver.RemoveAll(m => m == target);
 
 		_aiObserver.Add(ai);
 		_aiObserver.Add(target);

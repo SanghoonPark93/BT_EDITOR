@@ -19,12 +19,8 @@ public class AITest : AI, IObjectType
 		IDLE
 	}
 
-#if UNITY_EDITOR
-
 	[SerializeField]
 	private bool _showLog;
-
-#endif
 
 	[SerializeField]
 	private float _hp;
@@ -61,20 +57,35 @@ public class AITest : AI, IObjectType
 
 	public MonoBehaviour target => _target;
 
+	public AITest Head => _head;
+	
 	public FSMType fsmState { get; private set; }
 
 	public override void Initialize(string jsonName)
 	{
 		base.Initialize(jsonName);
 
-		SetDelayTime(0.1f);
+		SetDelayTime(0.05f);		
 
 		_anim = GetComponentInChildren<Animator>();
 		_navi = GetComponent<NavMeshAgent>();
 		_detector = GetComponentInChildren<Detector>();
-		_hp = 500f;
+		_hp = 5;
+
+		_detector.onFilter -= HasHead;
+		_detector.onFilter += HasHead;
 
 		_str = Random.Range(1, 5);
+	}
+
+	public bool HasHead(IObjectType type) 
+	{
+		var hasHead = false;
+
+		if(type is AITest ai)
+			hasHead = ai.Head != null;
+
+		return hasHead;
 	}
 
 	private void OnTriggerEnter(Collider other)
@@ -217,7 +228,7 @@ public class AITest : AI, IObjectType
 		{
 			if(_anim.GetBool(key) == false)
 			{				
-				_anim.SetBool(key, true);
+				_anim.SetTrigger(key);
 				_navi.isStopped = true;
 				StartCoroutine(DelayState(1.3f, () =>
 				{
@@ -367,7 +378,6 @@ public class AITest : AI, IObjectType
 		return NodeState.SUCCESS;
 	}
 
-
 	#region CLUSTERING
 
 	public NodeState Clustering(bool isFirstTurn) 
@@ -389,7 +399,7 @@ public class AITest : AI, IObjectType
 
 					SampleManager.Instance.RequestClustering(this, getAI as AITest);
 					_isBlock = true;
-				}				
+				}
 			}
 		}		
 
@@ -428,7 +438,5 @@ public class AITest : AI, IObjectType
 		yield return new WaitForSeconds(delay);
 
 		onEnd?.Invoke();		
-	}
-
-
+	}	
 }

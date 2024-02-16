@@ -12,6 +12,10 @@ public class Detector : InteractionObject
 
 	private SphereCollider _collider;
 
+	public delegate bool OnFilter(IObjectType type);
+
+	public OnFilter onFilter;
+
 	public float radius => _collider.radius;
 
 	public bool Contains(GameObject obj) 
@@ -61,6 +65,10 @@ public class Detector : InteractionObject
 			return;
 
 		base.TriggerEnter(other);
+
+		var isFilter = (onFilter == null) ? false : onFilter.Invoke(other);
+		if(isFilter)
+			return;
 
 		switch(other.ObjType())
 		{
