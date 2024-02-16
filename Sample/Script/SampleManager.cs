@@ -49,6 +49,9 @@ public class SampleManager : MonoSingleton<SampleManager>
 
 			ai.ResponseClustering(head, child);
 			target.ResponseClustering(head, child);
+
+			_aiObserver.RemoveAll(m => m == ai);
+			_aiObserver.RemoveAll(m => m == target);
 			return;
 		}
 

@@ -190,7 +190,10 @@ public class AITest : AI, IObjectType
 			StartCoroutine(DelayState(6.4f, () =>
 			{
 				_stateCache = NodeState.SUCCESS;
+
 			}));
+
+			_child.ForEach(m => m.ResetHead());
 		}
 
 		return _stateCache;
@@ -395,6 +398,7 @@ public class AITest : AI, IObjectType
 						Utils.EditorLog("Clustering");
 
 					_detector.RemoveObj(_target as IObjectType);
+					
 					StopMove();
 
 					SampleManager.Instance.RequestClustering(this, getAI as AITest);
@@ -416,6 +420,7 @@ public class AITest : AI, IObjectType
 					_child = new List<AITest>();
 
 				_child.Add(child);
+				_detector.RemoveObj(child);
 			}
 			else // 내가 자식이라면
 			{
@@ -423,6 +428,7 @@ public class AITest : AI, IObjectType
 
 				//내가 군집에서 하위 객체이면 이후로는 상위 객체의 디텍터에 의존
 				_detector.gameObject.SetActive(false);
+				_detector.RemoveObj(head);
 			}
 
 			_str += 1f;
@@ -438,5 +444,11 @@ public class AITest : AI, IObjectType
 		yield return new WaitForSeconds(delay);
 
 		onEnd?.Invoke();		
-	}	
+	}
+
+	private void ResetHead() 
+	{
+		_head = null;
+		_detector.gameObject.SetActive(true);
+	}
 }
