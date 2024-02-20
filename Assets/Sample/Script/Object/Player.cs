@@ -1,29 +1,32 @@
 using Core;
 using UnityEngine;
 
-public class Player : InteractionObject
+namespace BT.Sample
 {
-	[SerializeField]
-	private Transform _point;
-
-	[SerializeField]
-	private Weapon _bulletPrefab;
-
-	[SerializeField] InteractionType _type;
-	public override InteractionType ObjType() => _type;
-
-	private void OnDrawGizmos()
+	public class Player : InteractionObject
 	{
-		Gizmos.color = Color.blue;
-		Gizmos.DrawWireSphere(transform.position, 1);
-	}
+		[SerializeField]
+		private Transform _point;
 
-	private void Update()
-	{
-		if(Input.GetMouseButtonDown(0)) 
-		{			
-			var bulletPos = transform.position.OpY(1.5f).OpZ(1f);
-			var bullet = Instantiate(_bulletPrefab, _point.position, _point.rotation);			
+		[SerializeField]
+		private Weapon _bulletPrefab;
+
+		[SerializeField] InteractionType _type;
+		public override InteractionType ObjType() => _type;
+
+		private void OnDrawGizmos()
+		{
+			Gizmos.color = Color.blue;
+			Gizmos.DrawWireSphere(transform.position, 1);
+		}
+
+		private void Update()
+		{
+			if (Input.GetMouseButtonDown(0))
+			{
+				var bulletPos = transform.position.OpY(1.5f).OpZ(1f);
+				var bullet = Instantiate(_bulletPrefab, _point.position, _point.rotation);
+			}
 		}
 	}
 }

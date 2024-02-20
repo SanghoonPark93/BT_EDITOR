@@ -1,13 +1,16 @@
 using Core;
 using UnityEngine;
 
-public class SimpleCamera : MonoBehaviour
+namespace BT.Sample
 {
-    [SerializeField] Transform _target;
-
-    // Update is called once per frame
-    void Update()
+    public class SimpleCamera : MonoBehaviour
     {
-        transform.position = _target.position.OpY(29f).OpZ(-9f);
+        [SerializeField] Transform _target;
+
+        // Update is called once per frame
+        void Update()
+        {
+            transform.position = _target.position.OpY(29f).OpZ(-9f);
+        }
     }
 }

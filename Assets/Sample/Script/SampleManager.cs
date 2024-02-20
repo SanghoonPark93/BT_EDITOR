@@ -3,72 +3,75 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SampleManager : MonoSingleton<SampleManager>
+namespace BT.Sample
 {
-	[SerializeField]
-	private List<AI> _aiList;	
-
-	private List<AITest> _aiObserver = new();
-
-	public static SampleManager Instance
+	public class SampleManager : MonoSingleton<SampleManager>
 	{
-		get
+		[SerializeField]
+		private List<AI> _aiList;
+
+		private List<AITest> _aiObserver = new();
+
+		public static SampleManager Instance
 		{
-			if(_instance == null)
-				CreateInstance("SampleManager");
-
-			return _instance;
-		}
-	}
-
-	private void Awake()
-	{
-		_aiList.ForEach(m => m.Initialize("AI"));
-	}
-
-	private void Update()
-	{
-		if(Input.GetKeyDown(KeyCode.P))
-			Cursor.lockState = (Cursor.lockState == CursorLockMode.Locked) ? CursorLockMode.None: CursorLockMode.Locked;
-	}
-
-	public void RequestClustering(AITest ai, AITest target)
-	{
-		if(_aiObserver.Contains(ai) && _aiObserver.Contains(target))
-		{
-			StopCoroutine(nameof(TimeOutClustering));
-
-			var head = ai;
-			var child = target;
-
-			if(ai.value < target.value) 
+			get
 			{
-				head = target;
-				child = ai;
-			}
+				if (_instance == null)
+					CreateInstance("SampleManager");
 
-			ai.ResponseClustering(head, child);
-			target.ResponseClustering(head, child);
+				return _instance;
+			}
+		}
+
+		private void Awake()
+		{
+			_aiList.ForEach(m => m.Initialize("AI"));
+		}
+
+		private void Update()
+		{
+			if (Input.GetKeyDown(KeyCode.P))
+				Cursor.lockState = (Cursor.lockState == CursorLockMode.Locked) ? CursorLockMode.None : CursorLockMode.Locked;
+		}
+
+		public void RequestClustering(AITest ai, AITest target)
+		{
+			if (_aiObserver.Contains(ai) && _aiObserver.Contains(target))
+			{
+				StopCoroutine(nameof(TimeOutClustering));
+
+				var head = ai;
+				var child = target;
+
+				if (ai.value < target.value)
+				{
+					head = target;
+					child = ai;
+				}
+
+				ai.ResponseClustering(head, child);
+				target.ResponseClustering(head, child);
+
+				_aiObserver.RemoveAll(m => m == ai);
+				_aiObserver.RemoveAll(m => m == target);
+				return;
+			}
 
 			_aiObserver.RemoveAll(m => m == ai);
 			_aiObserver.RemoveAll(m => m == target);
-			return;
+
+			_aiObserver.Add(ai);
+			_aiObserver.Add(target);
+
+			StartCoroutine(TimeOutClustering(ai, target));
 		}
 
-		_aiObserver.RemoveAll(m => m == ai);
-		_aiObserver.RemoveAll(m => m == target);
+		private IEnumerator TimeOutClustering(AITest ai, AITest target)
+		{
+			yield return new WaitForSeconds(3f);
 
-		_aiObserver.Add(ai);
-		_aiObserver.Add(target);
-
-		StartCoroutine(TimeOutClustering(ai, target));
-	}
-
-	private IEnumerator TimeOutClustering(AITest ai, AITest target) 
-	{
-		yield return new WaitForSeconds(3f);
-
-		ai.ResponseClustering();
-		target.ResponseClustering();
+			ai.ResponseClustering();
+			target.ResponseClustering();
+		}
 	}
 }

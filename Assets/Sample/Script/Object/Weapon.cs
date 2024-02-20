@@ -1,48 +1,51 @@
 using System.Collections;
 using UnityEngine;
 
-public class Weapon : MonoBehaviour, IObjectType
+namespace BT.Sample
 {
-	private float _speed;
-
-	public InteractionType ObjType() => InteractionType.WEAPON;
-	
-	public float damage { get; private set; }
-
-	private void Awake()
+	public class Weapon : MonoBehaviour, IObjectType
 	{
-		_speed = 50f;
-		damage = 1f;
+		private float _speed;
 
-		StartCoroutine(DelayDestroy());
-	}
+		public InteractionType ObjType() => InteractionType.WEAPON;
 
-	private void Update()
-	{
-		transform.Translate(Vector3.forward * _speed * Time.deltaTime);
-	}
+		public float damage { get; private set; }
 
-	private void OnTriggerEnter(Collider other)
-	{
-		if(other.TryGetComponent(out IObjectType obj))
+		private void Awake()
 		{
-			if(obj.ObjType() == InteractionType.DETECTOR)
-				return;
+			_speed = 50f;
+			damage = 1f;
+
+			StartCoroutine(DelayDestroy());
+		}
+
+		private void Update()
+		{
+			transform.Translate(Vector3.forward * _speed * Time.deltaTime);
+		}
+
+		private void OnTriggerEnter(Collider other)
+		{
+			if (other.TryGetComponent(out IObjectType obj))
+			{
+				if (obj.ObjType() == InteractionType.DETECTOR)
+					return;
+
+				DestroyObj();
+			}
+		}
+
+		private IEnumerator DelayDestroy()
+		{
+			yield return new WaitForSeconds(10f);
 
 			DestroyObj();
 		}
-	}
 
-	private IEnumerator DelayDestroy() 
-	{
-		yield return new WaitForSeconds(10f);
-
-		DestroyObj();
-	}
-
-	private void DestroyObj() 
-	{
-		StopAllCoroutines();
-		Destroy(gameObject);
+		private void DestroyObj()
+		{
+			StopAllCoroutines();
+			Destroy(gameObject);
+		}
 	}
 }
