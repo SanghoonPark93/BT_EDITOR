@@ -1,223 +1,215 @@
 ﻿#if UNITY_EDITOR
 
-using BT;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-public class EditorNode : BTNode
-{	
-	private readonly float DEFAULT_WIDTH = 100f;
-	private readonly float DEFAULT_HEIGHT = 50f;	
-	private readonly float LEAF_HEIGHT = 70f;
-	private readonly float CUSTOM_HEIGHT = 90f;
-	
-	public EditorNode parent { get; private set; }
-
-	/// <summary>
-	/// 트리 구조에 포함 된 상태
-	/// </summary>	
-	public void SetData(NodeController controller, Node node, EditorNode parent = null) 
+namespace BT
+{
+	public class EditorNode
 	{
-		id = node.id;			
-		actionName = node.actionName;
-		nodeType = node.nodeType;
-		actionType = node.actionType;
-		rect = node.rect;
-		rect.width = DEFAULT_WIDTH;
-		this.parent = parent;
+ 		private readonly float DEFAULT_WIDTH = 150f;
+		private readonly float DEFAULT_HEIGHT = 100f;
 
-		foreach(var id in node.childIds) 
-		{
-			var childData = controller.GetChild(id);
-
-			if(childData == null)
-				continue;
-
-			var child = new EditorNode();
-			child.SetData(controller, childData, this);
-
-			_childs.Add(child);			
-		}
-	}
-
-	/// <summary>
-	/// 아직 트리구조에 포함 되지 않은 상태
-	/// </summary>	
-	public void SetData(Vector2 pos) 
-	{		
-		actionName = "Event Method";
-		rect = new Rect(pos.x, pos.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
-		id = 0;
-	}
-
-	public void DrawWindow()
-	{
-		rect = GUI.Window(id, rect, GetWindowData, id.ToString());
-		foreach(var child in _childs)
-		{
-			if(child is EditorNode editorChild)
-				editorChild.DrawWindow();
-		}		
-	}
-
-	public void GetWindowData(int id)
-	{
-		EditorGUILayout.BeginVertical();
+		public EditorNode parent { get; private set; }
 				
-		nodeType = (BTState)EditorGUILayout.EnumPopup(nodeType);
+		private Node _nodeData = new();
 
-		switch(nodeType) 
+		protected List<EditorNode> _childs = new List<EditorNode>();
+
+		public Node data => _nodeData;
+
+		/// <summary>
+		/// 트리 구조에 포함 된 상태
+		/// </summary>	
+		public void SetData(NodeController controller, Node node, EditorNode parent = null)
 		{
-			case BTState.ROOT:
-			case BTState.SEQUENCE:
-			case BTState.SELECTOR:
-				rect.height = DEFAULT_HEIGHT;
-				break;
+			_nodeData.CopyInfo(node.id, node.nodeType, node.rect);			
+			
+			this.parent = parent;
 
-			default:
-				actionType = (ActionType)EditorGUILayout.EnumPopup(actionType);
+			foreach (var id in node.childIds)
+			{
+				var childData = controller.GetChild(id);
 
-				switch(actionType) 
-				{
-					case ActionType.CUSTOM:						
-						actionName = EditorGUILayout.TextField(actionName);
-						rect.height = CUSTOM_HEIGHT;						
-						break;
+				if (childData == null)
+					continue;
 
-					default:
-						rect.height = LEAF_HEIGHT;
-						break;
-				}				
-				break;
-		}		
-		
-		SetDefautType();
+				var child = new EditorNode();
+				child.SetData(controller, childData, this);
 
-		EditorGUILayout.EndVertical();
-
-		GUI.DragWindow();		
-	}
-
-	public void DrawArrow()
-	{
-		foreach(var child in _childs)
-		{
-			BehaviorTreeRenderer.DrawArrow(rect, child.rect);
-			if(child is EditorNode editorChild)
-				editorChild.DrawArrow();
-		}	
-	}
-
-	public void DeleteNode()
-	{
-		if(parent != null)
-		{
-			parent.RemoveChild(this);
-			parent = null;
+				_childs.Add(child);
+			}
 		}
 
-		_childs.Clear();
-	}
-	
-	private bool RemoveChild(EditorNode node)
-	{
-		if(_childs.Contains(node) == false) 
+		/// <summary>
+		/// 아직 트리구조에 포함 되지 않은 상태
+		/// </summary>	
+		public void SetData(Vector2 pos, Node node)
 		{
-			foreach(var child in _childs)
+			var rect = new Rect(pos.x, pos.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+			if(node == null)
 			{
-				if(child is EditorNode editorChild) 
+				_nodeData.CopyInfo(0, BTType.NONE, rect);
+			}
+			else 
+			{
+				node.SetValue(rect: rect);
+				_nodeData = node;
+			}			
+		}
+
+		public void DrawWindow()
+		{
+			if(_nodeData != null && _nodeData is ConditionNode)
+			{
+				_nodeData.SetValue(rect: GUI.Window(_nodeData.id, _nodeData.rect, DrawDiamond, _nodeData.id.ToString()));
+			}
+			else 
+			{
+				_nodeData.SetValue(rect: GUI.Window(_nodeData.id, _nodeData.rect, GetWindowData, _nodeData.id.ToString()));
+			}
+
+			foreach (var child in _childs)
+			{
+				if (child is EditorNode editorChild)
+					editorChild.DrawWindow();
+			}
+		}
+
+		public void GetWindowData(int id)
+		{
+			EditorGUILayout.BeginVertical();
+			EditorGUILayout.LabelField($"{nameof(_nodeData)}_{_nodeData.nodeType}");
+			EditorGUILayout.EndVertical();
+
+			GUI.DragWindow();
+		}
+
+		public void DrawDiamond(int id)
+		{
+			var center = _nodeData.rect.center;
+			var top = new Vector2(center.x, _nodeData.rect.yMin);
+			var bottom = new Vector2(center.x, _nodeData.rect.yMax);
+			var left = new Vector2(_nodeData.rect.xMin, center.y);
+			var right = new Vector2(_nodeData.rect.xMax, center.y);
+
+			//Handles.color = color;
+			Handles.DrawLine(top, left);
+			Handles.DrawLine(left, bottom);
+			Handles.DrawLine(bottom, right);
+			Handles.DrawLine(right, top);
+
+			GUI.DragWindow();
+		}
+
+		public void DrawArrow()
+		{
+			foreach (var child in _childs)
+			{
+				BehaviorTreeRenderer.DrawArrow(_nodeData.rect, child.data.rect);
+				if (child is EditorNode editorChild)
+					editorChild.DrawArrow();
+			}
+		}
+
+		public void DeleteNode()
+		{
+			if (parent != null)
+			{
+				parent.RemoveChild(this);
+				parent = null;
+			}
+
+			_childs.Clear();
+		}
+
+		private bool RemoveChild(EditorNode node)
+		{
+			if (_childs.Contains(node) == false)
+			{
+				foreach (var child in _childs)
 				{
-					if(editorChild.RemoveChild(node))
-						return true;
+					if (child is EditorNode editorChild)
+					{
+						if (editorChild.RemoveChild(node))
+							return true;
+					}
+				}
+
+				return false;
+			}
+
+			_childs.Remove(node);
+			return true;
+		}
+
+		public void AddChild(EditorNode node)
+		{
+			if (_childs.Contains(node) == true)
+				return;
+
+			node.parent = this;
+			_nodeData.AddChild(node.data);
+			_childs.Add(node);			
+		}
+
+		public EditorNode FindSelectNode(Vector2 mousePos)
+		{
+			if (_nodeData.rect.Contains(mousePos))
+				return this;
+
+			foreach (var child in _childs)
+			{
+				if (child is EditorNode editorChild)
+				{
+					var findSelect = editorChild.FindSelectNode(mousePos);
+					if (findSelect != null)
+						return findSelect;
 				}
 			}
 
-			return false;
+			return null;
 		}
 
-		_childs.Remove(node);
-		return true;
-	}
-
-	public void AddChild(EditorNode node)
-	{
-		if(_childs.Contains(node) == true)
-			return;
-
-		node.parent = this;
-		base.AddChild(node);		
-	}
-
-	public EditorNode FindSelectNode(Vector2 mousePos)
-	{
-		if(rect.Contains(mousePos))
-			return this;
-
-		foreach(var child in _childs)
+		/// <summary>
+		/// 파라미터 id를 시작으로 자신과 자식 노드들의 id를 세팅해준다
+		/// </summary>
+		/// <param name="id">자신에게 부여 받은 id</param>
+		/// <returns>마지막 자식의 id</returns>
+		public int SetId(int id = 0)
 		{
-			if(child is EditorNode editorChild)
+			_nodeData.SetValue(id);
+			var lastId = id;
+
+			//동일 뎁스에서 좌측에 있을 수록 우선순위가 높은 노드
+			_childs = _childs.OrderBy(m => m.data.rect.x).ToList();
+			_nodeData.childIds.Clear();
+			foreach (var child in _childs)
 			{
-				var findSelect = editorChild.FindSelectNode(mousePos);
-				if(findSelect != null)
-					return findSelect;
+				if (child is EditorNode editorChild)
+				{
+					var curId = lastId + 1;
+					_nodeData.childIds.Add(curId);
+					lastId = editorChild.SetId(curId);
+				}
 			}
+
+			return lastId;
 		}
 
-		return null;
-	}
-
-	private void SetDefautType()
-	{
-		if(parent == null)
+		public void PrintChild()
 		{
-			nodeType = BTState.ROOT;
+			Debug.Log($"child count : {_childs.Count}");
+			_childs.ForEach(m => Debug.Log($"child id : {m.data.id}"));
 		}
-		else
+
+		public void PrintParent()
 		{
-			if(nodeType == BTState.ROOT)
-				nodeType = BTState.NONE;
+			if (parent != null)
+				Debug.Log(parent.data.id);
 		}
-	}
-
-	/// <summary>
-	/// 파라미터 id를 시작으로 자신과 자식 노드들의 id를 세팅해준다
-	/// </summary>
-	/// <param name="id">자신에게 부여 받은 id</param>
-	/// <returns>마지막 자식의 id</returns>
-	public int SetId(int id = 0)
-	{
-		this.id = id;
-
-		var lastId = this.id;
-
-		//동일 뎁스에서 좌측에 있을 수록 우선순위가 높은 노드
-		_childs = _childs.OrderBy(m => m.rect.x).ToList();
-		childIds.Clear();
-		foreach(var child in _childs)
-		{
-			if(child is EditorNode editorChild) 			
-			{
-				var curId = lastId + 1;
-				childIds.Add(curId);
-				lastId = editorChild.SetId(curId);
-			}
-		}
-
-		return lastId;
-	}
-
-	public void PrintChild()
-	{
-		Debug.Log($"child count : {_childs.Count}");
-		_childs.ForEach(m => Debug.Log($"child id : {m.id}"));
-	}
-
-	public void PrintParent()
-	{
-		if(parent != null)
-			Debug.Log(parent.id);
 	}
 }
-
 #endif
