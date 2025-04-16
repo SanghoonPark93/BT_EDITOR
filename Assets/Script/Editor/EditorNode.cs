@@ -62,14 +62,10 @@ namespace BT
 
 		public void DrawWindow()
 		{
-			if(_nodeData != null && _nodeData is ConditionNode)
-			{
-				_nodeData.SetValue(rect: GUI.Window(_nodeData.id, _nodeData.rect, DrawDiamond, _nodeData.id.ToString()));
-			}
-			else 
-			{
-				_nodeData.SetValue(rect: GUI.Window(_nodeData.id, _nodeData.rect, GetWindowData, _nodeData.id.ToString()));
-			}
+			if(_nodeData == null)
+				return;
+
+			_nodeData.DrawWindow();
 
 			foreach (var child in _childs)
 			{
@@ -83,23 +79,6 @@ namespace BT
 			EditorGUILayout.BeginVertical();
 			EditorGUILayout.LabelField($"{nameof(_nodeData)}_{_nodeData.nodeType}");
 			EditorGUILayout.EndVertical();
-
-			GUI.DragWindow();
-		}
-
-		public void DrawDiamond(int id)
-		{
-			var center = _nodeData.rect.center;
-			var top = new Vector2(center.x, _nodeData.rect.yMin);
-			var bottom = new Vector2(center.x, _nodeData.rect.yMax);
-			var left = new Vector2(_nodeData.rect.xMin, center.y);
-			var right = new Vector2(_nodeData.rect.xMax, center.y);
-
-			//Handles.color = color;
-			Handles.DrawLine(top, left);
-			Handles.DrawLine(left, bottom);
-			Handles.DrawLine(bottom, right);
-			Handles.DrawLine(right, top);
 
 			GUI.DragWindow();
 		}

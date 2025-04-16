@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace BT
@@ -18,6 +19,18 @@ namespace BT
 #if UNITY_EDITOR
 
 		public Rect rect { get; protected set; }
+
+		public virtual void DrawWindow() 
+		{
+			SetValue(rect: GUI.Window(id, rect, (id) =>
+			{
+				EditorGUILayout.BeginVertical();
+				EditorGUILayout.LabelField($"{nodeType}");
+				EditorGUILayout.EndVertical();
+
+				GUI.DragWindow();
+			}, id.ToString()));
+		}
 
 #endif
 
