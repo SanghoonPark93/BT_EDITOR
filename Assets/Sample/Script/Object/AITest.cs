@@ -120,7 +120,7 @@ namespace BT.Sample
 					return;
 				}
 
-				if (Hit(isFirstTurn) != BtState.FAILUER)
+				if (Hit(isFirstTurn) != NodeState.FAILUER)
 					return;
 
 				if (headTarget == null)
@@ -166,16 +166,16 @@ namespace BT.Sample
 			base.UpdateBody();
 		}
 
-		public override BtState HpCheck(bool isFirstTurn)
+		public override NodeState HpCheck(bool isFirstTurn)
 		{
-			return (isAlive) ? BtState.FAILUER : BtState.SUCCESS;
+			return (isAlive) ? NodeState.FAILUER : NodeState.SUCCESS;
 		}
 
-		public override BtState Death(bool isFirstTurn)
+		public override NodeState Death(bool isFirstTurn)
 		{
 			var key = "Death";
 
-			_stateCache = BtState.RUNNING;
+			_stateCache = NodeState.RUNNING;
 
 			if (isFirstTurn)
 			{
@@ -190,7 +190,7 @@ namespace BT.Sample
 
 				StartCoroutine(DelayState(6.4f, () =>
 				{
-					_stateCache = BtState.SUCCESS;
+					_stateCache = NodeState.SUCCESS;
 
 				}));
 
@@ -202,7 +202,7 @@ namespace BT.Sample
 
 		#region HP
 
-		public override BtState Hit(bool isFirstTurn)
+		public override NodeState Hit(bool isFirstTurn)
 		{
 			var isHit = _hitInfoQueue.Any();
 
@@ -213,13 +213,13 @@ namespace BT.Sample
 				if (_showLog)
 					Utils.EditorLog(key);
 
-				_stateCache = BtState.SUCCESS;
+				_stateCache = NodeState.SUCCESS;
 
 				var weapon = (_hitInfoQueue.Dequeue() as Weapon);
 				CalculateHp(-weapon.damage);
 			}
 
-			return (isHit) ? _stateCache : BtState.FAILUER;
+			return (isHit) ? _stateCache : NodeState.FAILUER;
 		}
 
 		private void CalculateHp(float value)
@@ -238,7 +238,7 @@ namespace BT.Sample
 					{
 						_navi.isStopped = false;
 						_anim.SetBool(key, false);
-						_stateCache = BtState.FAILUER;
+						_stateCache = NodeState.FAILUER;
 					}));
 				}
 			}
@@ -246,7 +246,7 @@ namespace BT.Sample
 
 		#endregion
 
-		public override BtState Detector(bool isFirstTurn)
+		public override NodeState Detector(bool isFirstTurn)
 		{
 			var isOn = _detector.isOn;
 
@@ -260,13 +260,13 @@ namespace BT.Sample
 				_target = null;
 			}
 
-			return isOn ? BtState.RUNNING : BtState.FAILUER;
+			return isOn ? NodeState.RUNNING : NodeState.FAILUER;
 		}
 
-		public override BtState Attack(bool isFirstTurn)
+		public override NodeState Attack(bool isFirstTurn)
 		{
 			if (_isBlock)
-				return BtState.FAILUER;
+				return NodeState.FAILUER;
 
 			var key = "Attack";
 			var isOn = _detector.playerList.Any() || (_target != null);
@@ -280,7 +280,7 @@ namespace BT.Sample
 						_target = (findPlayer as MonoBehaviour);
 				}
 
-				_stateCache = BtState.FAILUER;
+				_stateCache = NodeState.FAILUER;
 
 				if (_target != null)
 				{
@@ -290,7 +290,7 @@ namespace BT.Sample
 					{
 						StopMove(false);
 						fsmState = FSMType.ATTACK;
-						_stateCache = BtState.SUCCESS;
+						_stateCache = NodeState.SUCCESS;
 
 						var dir = _target.transform.position - transform.position;
 						transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 100f).ChangeXZ(0f, 0f);
@@ -304,12 +304,12 @@ namespace BT.Sample
 				}
 			}
 
-			return (isOn) ? _stateCache : BtState.FAILUER;
+			return (isOn) ? _stateCache : NodeState.FAILUER;
 		}
 
 		#region MOVE
 
-		public override BtState Move(bool isFirstTurn)
+		public override NodeState Move(bool isFirstTurn)
 		{
 			var hasTarget = (_target != null);
 
@@ -323,7 +323,7 @@ namespace BT.Sample
 				StartCoroutine(StartMove(50f));
 			}
 
-			return (hasTarget) ? BtState.SUCCESS : BtState.FAILUER;
+			return (hasTarget) ? NodeState.SUCCESS : NodeState.FAILUER;
 		}
 
 		private void StopMove(bool resetTarget = true)
@@ -366,7 +366,7 @@ namespace BT.Sample
 
 		#endregion
 
-		public override BtState Idle(bool isFirstTurn)
+		public override NodeState Idle(bool isFirstTurn)
 		{
 			if (isFirstTurn)
 			{
@@ -379,12 +379,12 @@ namespace BT.Sample
 				fsmState = FSMType.IDLE;
 			}
 
-			return BtState.SUCCESS;
+			return NodeState.SUCCESS;
 		}
 
 		#region CLUSTERING
 
-		public BtState Clustering(bool isFirstTurn)
+		public NodeState Clustering(bool isFirstTurn)
 		{
 			if (_isBlock == false)
 			{
@@ -408,7 +408,7 @@ namespace BT.Sample
 				}
 			}
 
-			return (_isBlock) ? BtState.SUCCESS : BtState.FAILUER;
+			return (_isBlock) ? NodeState.SUCCESS : NodeState.FAILUER;
 		}
 
 		public void ResponseClustering(AITest head = null, AITest child = null)

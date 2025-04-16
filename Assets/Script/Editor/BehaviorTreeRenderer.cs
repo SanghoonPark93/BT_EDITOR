@@ -5,8 +5,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using BT.Util;
-using System.IO;
-using System;
 
 namespace BT
 {
@@ -20,8 +18,6 @@ namespace BT
 
 	public class BehaviorTreeRenderer : EditorWindow
 	{
-		private static Rect _rect = new Rect(100, 100, 400, 400);
-
 		private enum MouseButtonState
 		{
 			Left = 0,
@@ -45,8 +41,8 @@ namespace BT
 
 		[MenuItem("Window/Behavior Tree")]
 		private static void Initialize()
-		{			
-			var window = GetWindowWithRect(typeof(BehaviorTreeRenderer), _rect);
+		{
+			var window = GetWindowWithRect(typeof(BehaviorTreeRenderer), new Rect(100, 100, 400, 400));
 			window.Show();
 		}
 
@@ -56,57 +52,33 @@ namespace BT
 			_mousePos = curEvent.mousePosition;
 
 			//선택 된 노드가 있는가
-			var isSelect = SelectNode();			
-			switch(curEvent.type) 
+			var isSelect = SelectNode();
+
+			switch((MouseButtonState)curEvent.button) 
 			{
-				case EventType.DragUpdated:
-					if(_rect.Contains(_mousePos))
+				case MouseButtonState.Right:
+					switch(curEvent.type)
 					{
-						DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-						Event.current.Use();
+						case EventType.MouseDown:
+							var menu = new GenericMenu();
+							CreateSubMenu(isSelect, menu);
+							curEvent.Use();
+							break;
 					}
 					break;
 
-				case EventType.DragPerform:					
-					if(_rect.Contains(_mousePos))
+				case MouseButtonState.Left:
+					switch(curEvent.type)
 					{
-						if((_root != null && _root.data.rect.Contains(_mousePos)) || _tempNodes.Any(m => m.data.rect.Contains(_mousePos)))
-							return;
+						case EventType.MouseDown:
+							if(isSelect)
+								ConnectNode();
+							break;
 
-						DragAndDrop.AcceptDrag();
-
-						foreach(var obj in DragAndDrop.objectReferences)
-						{
-							if(obj is MonoScript script)
-								OnFileDropped(script);
-						}
-
-						Event.current.Use();
-					}
-					break;
-
-				case EventType.MouseDown:
-					{
-						switch((MouseButtonState)curEvent.button) 
-						{
-							case MouseButtonState.Left:
-								if(isSelect)
-									ConnectNode();
-								break;
-
-							case MouseButtonState.Right:
-								var menu = new GenericMenu();
-								CreateSubMenu(isSelect, menu);
-								curEvent.Use();
-								break;
-						}
-					}
-					break;
-
-				case EventType.MouseUp:
-					{
-						if(isSelect)
-							ResetTreeNodesIds();
+						case EventType.MouseUp:
+							if(isSelect)
+								ResetTreeNodesIds();
+							break;
 					}
 					break;
 			}
@@ -117,9 +89,9 @@ namespace BT
 			//연결할 노드를 탐색중이라면
 			if(_searchingForConnectedNode == true && _prevSelect != null)
 			{
-				var mouseRect = new Rect(_mousePos.x, _mousePos.y, 10, 10);
+				var mouseRect = new Rect(curEvent.mousePosition.x, curEvent.mousePosition.y, 10, 10);
 
-				DrawArrow(_prevSelect.data.rect, mouseRect, false);
+				DrawArrow(_prevSelect.rect, mouseRect, false);
 				Repaint();
 			}			
 
@@ -166,7 +138,7 @@ namespace BT
 				controller = JsonUtility.FromJson<NodeController>(load);
 			}
 
-			var dataList = _root.data.GetAllNodes();			
+			var dataList = _root.GetAllNodes();			
 			controller.nodeList = dataList.Distinct().ToList();
 			Utils.WriteAllText(fileAddress, JsonUtility.ToJson(controller));
 			Debug.Log($"Save Count : {dataList.Count}");
@@ -187,7 +159,7 @@ namespace BT
 				_root = new EditorNode();
 				_root.SetData(controller, controller.Root);
 				ResetTreeNodesIds();
-				Debug.Log($"Load Count : {_root.data.GetAllNodes().Count}");
+				Debug.Log($"Load Count : {_root.GetAllNodes().Count}");
 			}
 		}
 
@@ -320,22 +292,6 @@ namespace BT
 			}
 		}
 
-		private void OnFileDropped(MonoScript script)
-		{
-			var className = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(script));
-
-			Type type = script.GetClass();
-
-			if(type == null || !typeof(Node).IsAssignableFrom(type))
-			{
-				Debug.LogError("Invalid Node class!");
-				return;
-			}
-
-			var node = Activator.CreateInstance(type) as Node;
-			CreateNode(_mousePos, node);			
-		}
-
 		#region SUB_MENU
 
 		private void CreateSubMenu(bool isSelect, GenericMenu menu) 
@@ -380,21 +336,20 @@ namespace BT
 			}
 		}
 
-		private void CreateNode(Vector2 pos, Node node = null)
-		{			
+		private void CreateNode(Vector2 pos)
+		{
+			var newItem = new EditorNode();
+			newItem.SetData(pos);
+
 			if(_root == null)
 			{
-				var rootItem = new EditorNode();
-				_root = rootItem;
-				var root = new RootNode();
-				_root.SetData(Vector2.zero, root);
+				_root = newItem;
 			}
-
-			var newItem = new EditorNode();
-			newItem.SetData(pos, node);
-			_tempNodes.Add(newItem);
-
-			ResetTreeNodesIds();
+			else 
+			{
+				_tempNodes.Add(newItem);
+				ResetTreeNodesIds();	
+			}
 		}
 
 		#endregion
