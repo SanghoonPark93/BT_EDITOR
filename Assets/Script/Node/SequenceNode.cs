@@ -15,10 +15,7 @@ namespace BT
 			foreach(var child in _childs)
 			{
 				if(isEnd)
-				{
-					isFirstTurn = true;
 					continue;
-				}
 
 				var childState = child.GetState();
 

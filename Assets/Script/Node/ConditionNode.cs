@@ -20,7 +20,7 @@ namespace BT
 			return CheckCondition() ? BtState.SUCCESS : BtState.FAILUER;
 		}
 
-		public override void DrawWindow()
+		public override void DrawDescription()
 		{			
 			Vector2 center = rect.center;
 			Vector2 top = new Vector2(center.x, rect.yMin);
@@ -51,13 +51,13 @@ namespace BT
 				fontSize = 12,
 				wordWrap = true
 			};
-			GUI.Label(rect, $"{id}\n{nodeType}", labelStyle);
+			GUI.Label(rect, $"{id}\n{nodeType}\n{"hp < 0"}", labelStyle);
 
 			// 드래그 처리
 			var e = Event.current;
 			if(e.type == EventType.MouseDrag && rect.Contains(e.mousePosition))
 			{
-				SetValue(rect: new Rect(rect.position + e.delta, rect.size));
+				SetRect(new Rect(rect.position + e.delta, rect.size));
 				Event.current.Use();
 			}
 		}

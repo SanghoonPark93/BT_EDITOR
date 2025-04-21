@@ -6,56 +6,14 @@ using UnityEngine;
 namespace BT
 {
 	[Serializable]
-	public class Node
+	public partial class Node
 	{
 		public List<int> childIds = new List<int>();
 
 		protected List<Node> _childs = new List<Node>();
 
 		public int id { get; protected set; }
-		public BTType nodeType { get; protected set; }
-		public bool isFirstTurn { get; protected set; }
-
-#if UNITY_EDITOR
-
-		public Rect rect { get; protected set; }
-
-		public virtual void DrawWindow() 
-		{
-			SetValue(rect: GUI.Window(id, rect, (id) =>
-			{
-				EditorGUILayout.BeginVertical();
-				EditorGUILayout.LabelField($"{nodeType}");
-				EditorGUILayout.EndVertical();
-
-				GUI.DragWindow();
-			}, id.ToString()));
-		}
-
-#endif
-
-		public void SetValue(int id = 0, BTType nodeType = BTType.NONE, Rect rect = new Rect()) 
-		{
-			if(id != 0)
-			{
-				this.id = id;
-			}
-			else if(nodeType != BTType.NONE)
-			{
-				this.nodeType = nodeType;
-			}
-			else if(rect != Rect.zero) 
-			{
-				this.rect = rect;
-			}
-		}
-
-		public void CopyInfo(int id, BTType nodeType, Rect rect) 
-		{
-			this.id = id;
-			this.nodeType = nodeType;
-			this.rect = rect;
-		}
+		public BTType nodeType { get; protected set; }		
 
 		public virtual BtState GetState()
 		{
@@ -83,8 +41,7 @@ namespace BT
 		public void SetData(NodeController controller, Node data, AI ai)
 		{
 			id = data.id;
-			nodeType = data.nodeType;
-			isFirstTurn = true;
+			nodeType = data.nodeType;			
 
 			foreach(var id in data.childIds)
 			{
@@ -108,6 +65,58 @@ namespace BT
 			_childs.ForEach(child => list.AddRange(child.GetAllNodes()));
 
 			return list;
+		}
+	}
+
+	//Write editor-related code here.
+	public partial class Node 
+	{
+#if UNITY_EDITOR
+
+		public Rect rect { get; protected set; }
+
+		public void CopyInfo(int id, BTType nodeType, Rect rect)
+		{
+			this.id = id;
+			this.nodeType = nodeType;
+			this.rect = rect;
+		}
+
+		public void SetId(int id) 
+		{
+			this.id = id;
+		}
+
+		public void SetNodeType(BTType nodeType) 
+		{
+			this.nodeType = nodeType;
+		}
+
+		public void SetRect(Rect rect) 
+		{
+			this.rect = rect;
+		}
+
+#endif
+		public void DrawWindow()
+		{
+#if UNITY_EDITOR
+			DrawDescription();
+#else
+			Debug.Log("This function should only be called in the Unity Editor.");
+#endif
+		}
+
+		public virtual void DrawDescription()
+		{
+			SetRect(GUI.Window(id, rect, (id) =>
+			{
+				EditorGUILayout.BeginVertical();
+				EditorGUILayout.LabelField($"{nodeType}");
+				EditorGUILayout.EndVertical();
+
+				GUI.DragWindow();
+			}, id.ToString()));
 		}
 	}
 }

@@ -55,7 +55,7 @@ namespace BT
 			}
 			else 
 			{
-				node.SetValue(rect: rect);
+				node.SetRect(rect);
 				_nodeData = node;
 			}			
 		}
@@ -159,7 +159,7 @@ namespace BT
 		/// <returns>마지막 자식의 id</returns>
 		public int SetId(int id = 0)
 		{
-			_nodeData.SetValue(id);
+			_nodeData.SetId(id);
 			var lastId = id;
 
 			//동일 뎁스에서 좌측에 있을 수록 우선순위가 높은 노드
