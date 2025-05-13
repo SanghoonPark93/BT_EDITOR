@@ -20,8 +20,6 @@ namespace BT
 
 	public class BehaviorTreeRenderer : EditorWindow
 	{
-		private static Rect _rect = new Rect(100, 100, 400, 400);
-
 		private enum MouseButtonState
 		{
 			Left = 0,
@@ -45,8 +43,9 @@ namespace BT
 
 		[MenuItem("Window/Behavior Tree")]
 		private static void Initialize()
-		{			
-			var window = GetWindowWithRect(typeof(BehaviorTreeRenderer), _rect);
+		{
+			var window = GetWindow<BehaviorTreeRenderer>();
+			window.titleContent = new GUIContent("Behavior Tree");
 			window.Show();
 		}
 
@@ -54,13 +53,15 @@ namespace BT
 		{
 			var curEvent = Event.current;
 			_mousePos = curEvent.mousePosition;
+			
+			var localWindowRect = new Rect(Vector2.zero, position.size);
 
 			//선택 된 노드가 있는가
 			var isSelect = SelectNode();			
 			switch(curEvent.type) 
 			{
 				case EventType.DragUpdated:
-					if(_rect.Contains(_mousePos))
+					if(localWindowRect.Contains(_mousePos))
 					{
 						DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
 						Event.current.Use();
@@ -68,7 +69,7 @@ namespace BT
 					break;
 
 				case EventType.DragPerform:					
-					if(_rect.Contains(_mousePos))
+					if(localWindowRect.Contains(_mousePos))
 					{
 						if((_root != null && _root.data.rect.Contains(_mousePos)) || _tempNodes.Any(m => m.data.rect.Contains(_mousePos)))
 							return;

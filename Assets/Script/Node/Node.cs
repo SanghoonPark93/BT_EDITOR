@@ -107,6 +107,9 @@ namespace BT
 #endif
 		}
 
+		/// <summary>
+		/// This function should only be called in the Unity Editor.
+		/// </summary>
 		public virtual void DrawDescription()
 		{
 			SetRect(GUI.Window(id, rect, (id) =>
