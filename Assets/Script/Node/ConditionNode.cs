@@ -84,7 +84,8 @@ namespace BT
 			var e = Event.current;
 			if(e.type == EventType.MouseDrag && rect.Contains(e.mousePosition))
 			{
-				SetRect(new Rect(rect.position + e.delta, rect.size));
+				var temp = rect.position + e.delta;
+				SetRect(temp.x, temp.y);
 				Event.current.Use();
 			}
 		}

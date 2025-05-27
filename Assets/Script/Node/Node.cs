@@ -18,25 +18,7 @@ namespace BT
 		public virtual BtState GetState()
 		{
 			return BtState.SUCCESS;
-		}
-
-		public virtual void AddChild(Node child)
-		{
-			if(_childs.Contains(child))
-				return;
-
-			childIds.Add(child.id);
-			_childs.Add(child);
-		}
-
-		public void RemoveChild(Node child)
-		{
-			if(_childs.Contains(child) == false)
-				return;
-
-			childIds.Remove(child.id);
-			_childs.Remove(child);
-		}
+		}			
 
 		public void SetData(NodeController controller, Node data, AI ai)
 		{
@@ -56,22 +38,15 @@ namespace BT
 				AddChild(node);
 			}
 		}
-
-		public List<Node> GetAllNodes()
-		{
-			var list = new List<Node>();
-			list.Add(this);
-
-			_childs.ForEach(child => list.AddRange(child.GetAllNodes()));
-
-			return list;
-		}
 	}
 
 	//Write editor-related code here.
 	public partial class Node 
 	{
 #if UNITY_EDITOR
+
+		protected virtual float width => 150f;
+		protected virtual float height => 100f;
 
 		public Rect rect { get; protected set; }
 
@@ -92,12 +67,42 @@ namespace BT
 			this.nodeType = nodeType;
 		}
 
-		public void SetRect(Rect rect) 
+		public void SetRect(float x, float y) 
+		{			
+			this.rect = new Rect(x, y, width, height);
+		}
+
+		public virtual void AddChild(Node child)
 		{
-			this.rect = rect;
+			if(_childs.Contains(child))
+				return;
+
+			childIds.Add(child.id);
+			_childs.Add(child);
+		}
+
+		public void RemoveChild(Node child)
+		{
+			if(_childs.Contains(child) == false)
+				return;
+
+			childIds.Remove(child.id);
+			_childs.Remove(child);
+		}
+
+		public List<Node> GetAllNodes()
+		{
+			var list = new List<Node>();
+			list.Add(this);
+
+			_childs.ForEach(child => list.AddRange(child.GetAllNodes()));
+
+			return list;
 		}
 
 #endif
+
+		#region GUI
 		public void DrawWindow()
 		{
 #if UNITY_EDITOR
@@ -112,14 +117,17 @@ namespace BT
 		/// </summary>
 		public virtual void DrawDescription()
 		{
-			SetRect(GUI.Window(id, rect, (id) =>
+			var rect = GUI.Window(id, this.rect, (id) =>
 			{
 				EditorGUILayout.BeginVertical();
 				EditorGUILayout.LabelField($"{nodeType}");
 				EditorGUILayout.EndVertical();
 
 				GUI.DragWindow();
-			}, id.ToString()));
+			}, id.ToString());
+
+			SetRect(rect.x, rect.y);
 		}
+		#endregion
 	}
 }

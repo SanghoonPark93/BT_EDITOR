@@ -48,14 +48,14 @@ namespace BT
 		/// </summary>	
 		public void SetData(Vector2 pos, Node node)
 		{
-			var rect = new Rect(pos.x, pos.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 			if(node == null)
 			{
+				var rect = new Rect(pos.x, pos.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 				_nodeData.CopyInfo(0, BTType.NONE, rect);
 			}
 			else 
 			{
-				node.SetRect(rect);
+				node.SetRect(pos.x, pos.y);
 				_nodeData = node;
 			}			
 		}
