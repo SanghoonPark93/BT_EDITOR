@@ -25,7 +25,7 @@ namespace BT
 		/// </summary>	
 		public void SetData(NodeController controller, Node node, EditorNode parent = null)
 		{
-			_nodeData.CopyInfo(node.id, node.nodeType, node.rect);			
+			//_nodeData.CopyInfo(node.id, node.nodeType, node.rect);			
 			
 			this.parent = parent;
 
@@ -51,7 +51,7 @@ namespace BT
 			if(node == null)
 			{
 				var rect = new Rect(pos.x, pos.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
-				_nodeData.CopyInfo(0, BTType.NONE, rect);
+				//_nodeData.CopyInfo(0, BTType.NONE, rect);
 			}
 			else 
 			{

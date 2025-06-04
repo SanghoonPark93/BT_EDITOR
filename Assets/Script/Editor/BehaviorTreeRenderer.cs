@@ -29,13 +29,13 @@ namespace BT
 		/// <summary>
 		/// 노드 새로 생성 후 트리에 속하기 직전까지 임시 보관 용 리스트
 		/// </summary>
-		private List<EditorNode> _tempNodes = new List<EditorNode>();
+		private List<Node> _tempNodes = new List<Node>();
 		
 		private Vector2 _mousePos;
 
-		private EditorNode _prevSelect;
-		private EditorNode _curSelect;
-		private EditorNode _root;
+		private Node _prevSelect;
+		private Node _curSelect;
+		private Node _root;
 
 		private bool _searchingForConnectedNode = false;
 		
@@ -71,7 +71,7 @@ namespace BT
 				case EventType.DragPerform:					
 					if(localWindowRect.Contains(_mousePos))
 					{
-						if((_root != null && _root.data.rect.Contains(_mousePos)) || _tempNodes.Any(m => m.data.rect.Contains(_mousePos)))
+						if((_root != null && _root.rect.Contains(_mousePos)) || _tempNodes.Any(m => m.rect.Contains(_mousePos)))
 							return;
 
 						DragAndDrop.AcceptDrag();
@@ -120,7 +120,7 @@ namespace BT
 			{
 				var mouseRect = new Rect(_mousePos.x, _mousePos.y, 10, 10);
 
-				DrawArrow(_prevSelect.data.rect, mouseRect, false);
+				DrawArrow(_prevSelect.rect, mouseRect, false);
 				Repaint();
 			}			
 
@@ -140,13 +140,12 @@ namespace BT
 
 			if(_root == null)
 				return;
-
-			_root.DrawArrow();
-
+						
+			ConnectChild(_root);
 			BeginWindows();
 
-			_root.DrawWindow();
-			_tempNodes.ForEach(node => node.DrawWindow());
+			_root.DrawNode();
+			_tempNodes.ForEach(node => node.DrawNode());
 
 			EndWindows();
 		}		
@@ -167,7 +166,7 @@ namespace BT
 				controller = JsonUtility.FromJson<NodeController>(load);
 			}
 
-			var dataList = _root.data.GetAllNodes();			
+			var dataList = _root.GetAllNodes();			
 			controller.nodeList = dataList.Distinct().ToList();
 			Utils.WriteAllText(fileAddress, JsonUtility.ToJson(controller));
 			Debug.Log($"Save Count : {dataList.Count}");
@@ -182,13 +181,12 @@ namespace BT
 
 			_root = null;
 			var controller = Utils.GetJson<NodeController>(_target.gameObject.name);
-
 			if(controller.Root != null) 
 			{
-				_root = new EditorNode();
+				_root = new RootNode();
 				_root.SetData(controller, controller.Root);
 				ResetTreeNodesIds();
-				Debug.Log($"Load Count : {_root.data.GetAllNodes().Count}");
+				Debug.Log($"Load Count : {_root.GetAllNodes().Count}");
 			}
 		}
 
@@ -236,7 +234,6 @@ namespace BT
 				foreach(var node in _tempNodes)
 				{
 					var findSelectNode = node.FindSelectNode(_mousePos);
-
 					if(findSelectNode == null)
 						continue;
 
@@ -272,6 +269,15 @@ namespace BT
 			}
 
 			return false;
+		}
+
+		private void ConnectChild(Node node)
+		{
+			foreach(var child in node.childs)
+			{
+				DrawArrow(node.rect, child.rect);
+				ConnectChild(child);
+			}
 		}
 
 		public static void DrawArrow(Rect start, Rect end, bool isChangePos = true)
@@ -384,15 +390,14 @@ namespace BT
 		private void CreateNode(Vector2 pos, Node node = null)
 		{			
 			if(_root == null)
-			{
-				var rootItem = new EditorNode();
-				_root = rootItem;
+			{				
+				_root = new RootNode();
 				var root = new RootNode();
-				_root.SetData(Vector2.zero, root);
+				_root.SetRect(0f, 0f);
 			}
 
-			var newItem = new EditorNode();
-			newItem.SetData(pos, node);
+			var newItem = new Node();
+			newItem.SetRect(pos.x, pos.y);
 			_tempNodes.Add(newItem);
 
 			ResetTreeNodesIds();
@@ -402,8 +407,7 @@ namespace BT
 
 		private void ResetTreeNodesIds() 
 		{
-			var nextId = (_root == null) ? 0 : _root.SetId() + 1;
-			
+			var nextId = (_root == null) ? 0 : _root.InitializeId() + 1;			
 			foreach(var temp in _tempNodes)
 			{
 				temp.SetId(nextId);

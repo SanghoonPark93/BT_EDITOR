@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,15 +13,20 @@ namespace BT
 
 		protected List<Node> _childs = new List<Node>();
 
+		public Node parent { get; private set; }
+
 		public int id { get; protected set; }
-		public BTType nodeType { get; protected set; }		
+
+		public BTType nodeType { get; protected set; }
+
+		public List<Node> childs => _childs;
 
 		public virtual BtState GetState()
 		{
 			return BtState.SUCCESS;
 		}			
 
-		public void SetData(NodeController controller, Node data, AI ai)
+		public void SetData(NodeController controller, Node data)
 		{
 			id = data.id;
 			nodeType = data.nodeType;			
@@ -33,10 +39,34 @@ namespace BT
 					continue;
 
 				var node = new Node();
-				node.SetData(controller, child, ai);
+				node.SetData(controller, child);
 
 				AddChild(node);
 			}
+		}
+
+		/// <summary>
+		/// 파라미터 id를 시작으로 자신과 자식 노드들의 id를 세팅해준다
+		/// </summary>
+		/// <param name="id">자신에게 부여 받은 id</param>
+		/// <returns>마지막 자식의 id</returns>
+		public int InitializeId(int id = 0)
+		{
+			SetId(id);
+			var lastId = id;
+
+			//동일 뎁스에서 좌측에 있을 수록 우선순위가 높은 노드
+			_childs = _childs.OrderBy(m => m.rect.x).ToList();
+			childIds.Clear();
+
+			foreach(var child in _childs)
+			{
+				var curId = lastId + 1;
+				childIds.Add(curId);
+				lastId = child.InitializeId(curId);
+			}
+
+			return lastId;
 		}
 	}
 
@@ -50,21 +80,9 @@ namespace BT
 
 		public Rect rect { get; protected set; }
 
-		public void CopyInfo(int id, BTType nodeType, Rect rect)
-		{
-			this.id = id;
-			this.nodeType = nodeType;
-			this.rect = rect;
-		}
-
 		public void SetId(int id) 
 		{
 			this.id = id;
-		}
-
-		public void SetNodeType(BTType nodeType) 
-		{
-			this.nodeType = nodeType;
 		}
 
 		public void SetRect(float x, float y) 
@@ -100,9 +118,54 @@ namespace BT
 			return list;
 		}
 
+		public Node FindSelectNode(Vector2 mousePos)
+		{
+			if(rect.Contains(mousePos))
+				return this;
+
+			foreach(var child in _childs)
+			{
+				var findSelect = child.FindSelectNode(mousePos);
+				if(findSelect != null)
+					return findSelect;
+			}
+
+			return null;
+		}
+
+		public void DeleteNode()
+		{
+			if(parent != null)
+			{
+				parent.RemoveChild(this);
+				parent = null;
+			}
+
+			_childs.Clear();
+		}
+
+		public void PrintChild()
+		{
+			Debug.Log($"child count : {_childs.Count}");
+			_childs.ForEach(m => Debug.Log($"child id : {m.id}"));
+		}
+
+		public void PrintParent()
+		{
+			if(parent != null)
+				Debug.Log(parent.id);
+		}
+
 #endif
 
 		#region GUI
+
+		public void DrawNode()
+		{
+			DrawWindow();
+			_childs.ForEach(m => m.DrawNode());			
+		}
+
 		public void DrawWindow()
 		{
 #if UNITY_EDITOR

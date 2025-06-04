@@ -44,7 +44,7 @@ namespace BT
 			if (controller.Root != null)
 			{
 				_btRoot = new RootNode();
-				_btRoot.SetData(controller, controller.Root, this);
+				_btRoot.SetData(controller, controller.Root);
 			}
 		}
 
