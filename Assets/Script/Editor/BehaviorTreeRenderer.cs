@@ -256,8 +256,11 @@ namespace BT
 				if(_tempNodes.Contains(_curSelect))
 					_tempNodes.Remove(_curSelect);
 
-				if(_root == _curSelect)
+				if(_root == _curSelect) 
+				{
 					_root = null;
+					_tempNodes.Clear();
+				}
 
 				_curSelect.DeleteNode();
 				_curSelect = null;
@@ -340,7 +343,7 @@ namespace BT
 			}
 
 			var node = Activator.CreateInstance(type) as Node;
-			CreateNode(_mousePos, node);			
+			CreateNode(_mousePos, node);
 		}
 
 		#region SUB_MENU
@@ -396,9 +399,11 @@ namespace BT
 				_root.SetRect(0f, 0f);
 			}
 
-			var newItem = new Node();
-			newItem.SetRect(pos.x, pos.y);
-			_tempNodes.Add(newItem);
+			if(node == null)
+				node = new Node();
+
+			node.SetRect(pos.x, pos.y);
+			_tempNodes.Add(node);
 
 			ResetTreeNodesIds();
 		}

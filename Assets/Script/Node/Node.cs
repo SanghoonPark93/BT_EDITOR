@@ -11,6 +11,7 @@ namespace BT
 	{
 		public List<int> childIds = new List<int>();
 
+		[NonSerialized]
 		protected List<Node> _childs = new List<Node>();
 
 		public Node parent { get; private set; }
