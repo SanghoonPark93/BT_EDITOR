@@ -20,6 +20,7 @@ namespace BT
 
 	public class BehaviorTreeRenderer : EditorWindow
 	{
+		private readonly string SCRIPTABLE_OBJ_PATH = "Assets/Resources/NodeScriptableObject.asset";
 		private enum MouseButtonState
 		{
 			Left = 0,
@@ -40,6 +41,26 @@ namespace BT
 		private bool _searchingForConnectedNode = false;
 		
 		private AI _target;
+		private NodeScriptableObject _scriptableObj;
+		private NodeScriptableObject scriptableObj 
+		{
+			get 
+			{
+				if(_scriptableObj == null) 
+				{
+					_scriptableObj = AssetDatabase.LoadAssetAtPath<NodeScriptableObject>(SCRIPTABLE_OBJ_PATH);
+
+					if(_scriptableObj == null)
+						Debug.LogWarning($"No ScriptableObject found at {SCRIPTABLE_OBJ_PATH}");
+				}				
+
+				return _scriptableObj;
+			}
+			set 
+			{
+				_scriptableObj = value;
+			}
+		}
 
 		[MenuItem("Window/Behavior Tree")]
 		private static void Initialize()
@@ -152,41 +173,35 @@ namespace BT
 
 		private void Save()
 		{
-			if(TargetIsNull() == true || _root == null)
+			if(TargetIsNull() || _root == null || scriptableObj == null)
 				return;
 
-			var controller = new NodeController();
-			var fileAddress = Utils.GetJsonAddress(_target.gameObject.name);
+			var controller = scriptableObj.GetNodeController(_target.gameObject.name);
 
-			ResetTreeNodesIds();			
+			controller.nodeList = _root.GetAllNodes().Distinct().ToList();
 
-			if(Utils.HasJson(fileAddress) == true)
-			{
-				var load = Utils.ReadAllText(fileAddress);
-				controller = JsonUtility.FromJson<NodeController>(load);
-			}
+			EditorUtility.SetDirty(scriptableObj);
+			AssetDatabase.SaveAssets();
 
-			var dataList = _root.GetAllNodes();			
-			controller.nodeList = dataList.Distinct().ToList();
-			Utils.WriteAllText(fileAddress, JsonUtility.ToJson(controller));
-			Debug.Log($"Save Count : {dataList.Count}");
+			Debug.Log($"Save Done : {controller.nodeList.Count} nodes");
 		}
 
 		private void Load()
 		{
-			if(TargetIsNull() == true)
+			if(TargetIsNull() || scriptableObj == null)
 				return;
 
 			_tempNodes.Clear();
-
 			_root = null;
-			var controller = Utils.GetJson<NodeController>(_target.gameObject.name);
-			if(controller.Root != null) 
+
+			var controller = scriptableObj.GetNodeController(_target.gameObject.name);
+			if(controller != null)
 			{
 				_root = new RootNode();
 				_root.SetData(controller, controller.Root);
+
 				ResetTreeNodesIds();
-				Debug.Log($"Load Count : {_root.GetAllNodes().Count}");
+				Debug.Log($"Load Done : {_root.GetAllNodes().Count} nodes");
 			}
 		}
 
