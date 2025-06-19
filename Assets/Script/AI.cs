@@ -42,10 +42,7 @@ namespace BT
 			var controller = Utils.GetJson<NodeController>(jsonName);
 
 			if (controller.Root != null)
-			{
-				_btRoot = new RootNode();
-				_btRoot.SetData(controller, controller.Root);
-			}
+				_btRoot = controller.Root as RootNode;
 		}
 
 		protected virtual void Update()

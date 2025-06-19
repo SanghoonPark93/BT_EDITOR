@@ -14,11 +14,14 @@ namespace BT
 		[NonSerialized]
 		protected List<Node> _childs = new List<Node>();
 
+		[SerializeField]
+		protected BTType _nodeType;
+
 		public Node parent { get; private set; }
 
 		public int id { get; protected set; }
 
-		public BTType nodeType { get; protected set; }
+		public BTType nodeType => _nodeType;
 
 		public List<Node> childs => _childs;
 
@@ -30,7 +33,7 @@ namespace BT
 		public void SetData(NodeController controller, Node data)
 		{
 			id = data.id;
-			nodeType = data.nodeType;			
+			_nodeType = data.nodeType;			
 
 			foreach(var id in data.childIds)
 			{

@@ -9,7 +9,7 @@ namespace BT
 
 		public ConditionNode()
 		{
-			nodeType = BTType.CONDITION;
+			_nodeType = BTType.CONDITION;
 		}
 
 		public virtual bool CheckCondition() 

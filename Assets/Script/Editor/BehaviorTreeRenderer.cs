@@ -177,6 +177,11 @@ namespace BT
 				return;
 
 			var controller = scriptableObj.GetNodeController(_target.gameObject.name);
+			if(controller == null) 
+			{
+				controller = new NodeController(_target.gameObject.name);
+				scriptableObj.SetNodeController(controller);
+			}
 
 			controller.nodeList = _root.GetAllNodes().Distinct().ToList();
 
@@ -188,20 +193,18 @@ namespace BT
 
 		private void Load()
 		{
-			if(TargetIsNull() || scriptableObj == null)
+ 			if(TargetIsNull() || scriptableObj == null)
 				return;
 
 			_tempNodes.Clear();
 			_root = null;
 
 			var controller = scriptableObj.GetNodeController(_target.gameObject.name);
-			if(controller != null)
-			{
-				_root = new RootNode();
-				_root.SetData(controller, controller.Root);
-
+			if(controller != null && controller.Root != null)
+			{				
+				_root = controller.Root;
 				ResetTreeNodesIds();
-				Debug.Log($"Load Done : {_root.GetAllNodes().Count} nodes");
+				Debug.Log($"Load Done : {_root.GetAllNodes().Count} nodes");			
 			}
 		}
 

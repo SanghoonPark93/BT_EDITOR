@@ -12,3 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c2458aba25d4f04992b1cbc5c2a0d01, type: 3}
   m_Name: NodeScriptableObject
   m_EditorClassIdentifier: 
+  _nodeList:
+  - _key: AI
+    nodeList:
+    - childIds: 01000000
+      _nodeType: 1
+    - childIds: 
+      _nodeType: 0

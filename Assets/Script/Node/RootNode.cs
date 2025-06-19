@@ -7,7 +7,7 @@ namespace BT
 
 		public RootNode()
 		{
-			nodeType = BTType.ROOT;
+			_nodeType = BTType.ROOT;
 		}
 	}
 }

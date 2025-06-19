@@ -6,14 +6,20 @@ namespace BT
 	[CreateAssetMenu(fileName = "NodeScriptableObject", menuName = "ScriptableObject/BTNode")]
 	public class NodeScriptableObject : ScriptableObject
 	{
-		private Dictionary<string, NodeController> _nodeDict = new();
+		[SerializeField]
+		private List<NodeController> _nodeList = new();
 
 		public NodeController GetNodeController(string key)
-		{
-			if(_nodeDict.ContainsKey(key) == false)
-				_nodeDict.Add(key, new NodeController());
+		{			
+			return _nodeList.Find(m => m.key == key);			
+		}
 
-			return _nodeDict[key];
+		public void SetNodeController(NodeController controller) 
+		{
+			if(GetNodeController(controller.key) != null)
+				return;
+
+			_nodeList.Add(controller);
 		}
 	}
 }

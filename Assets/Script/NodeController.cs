@@ -32,9 +32,18 @@ namespace BT
 	[Serializable]
 	public class NodeController
 	{
+		[SerializeField]
+		private string _key; 
+
 		public List<Node> nodeList = new List<Node>();
 		
 		public Node Root => nodeList.Find(m => m.nodeType == BTType.ROOT);
+		public string key => _key;
+
+		public NodeController(string key) 
+		{
+			_key = key;
+		}
 
 		public Node GetChild(int id)
 		{

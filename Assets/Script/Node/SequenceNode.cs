@@ -4,7 +4,7 @@ namespace BT
 	{
 		public SequenceNode()
 		{
-			nodeType = BTType.SEQUENCE;
+			_nodeType = BTType.SEQUENCE;
 		}
 
 		public override BtState GetState()

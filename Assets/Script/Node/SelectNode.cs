@@ -4,7 +4,7 @@ namespace BT
 	{
 		public SelectorNode()
 		{
-			nodeType = BTType.SELECTOR;
+			_nodeType = BTType.SELECTOR;
 		}
 
 		public override BtState GetState()
