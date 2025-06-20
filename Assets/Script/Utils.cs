@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace BT.Util
@@ -50,6 +53,16 @@ namespace BT.Util
 			Debug.Log(log);
 
 #endif
+		}
+
+		private static Dictionary<string, Type> _btTypeDict = new();
+
+		public static Type GetBTType(string typeName) 
+		{
+			if(_btTypeDict.ContainsKey(typeName) == false)
+				_btTypeDict.Add(typeName, Type.GetType($"BT.{typeName}"));
+
+			return _btTypeDict[typeName];
 		}
 	}
 }

@@ -183,12 +183,13 @@ namespace BT
 				scriptableObj.SetNodeController(controller);
 			}
 
-			controller.nodeList = _root.GetAllNodes().Distinct().ToList();
+			var saveList = _root.GetAllNodes().Distinct().ToList();
+			controller.SetNodeList(saveList);
 
 			EditorUtility.SetDirty(scriptableObj);
 			AssetDatabase.SaveAssets();
 
-			Debug.Log($"Save Done : {controller.nodeList.Count} nodes");
+			Debug.Log($"Save Done : {saveList.Count} nodes");
 		}
 
 		private void Load()

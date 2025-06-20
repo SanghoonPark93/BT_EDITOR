@@ -4,6 +4,7 @@ namespace BT
 	{
 		public SequenceNode()
 		{
+			_typeName = "SequenceNode";
 			_nodeType = BTType.SEQUENCE;
 		}
 

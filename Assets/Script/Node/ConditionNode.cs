@@ -9,6 +9,7 @@ namespace BT
 
 		public ConditionNode()
 		{
+			_typeName = "ConditionNode";
 			_nodeType = BTType.CONDITION;
 		}
 

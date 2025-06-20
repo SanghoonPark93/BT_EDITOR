@@ -4,6 +4,7 @@ namespace BT
 	{
 		public SelectorNode()
 		{
+			_typeName = "SelectorNode";
 			_nodeType = BTType.SELECTOR;
 		}
 

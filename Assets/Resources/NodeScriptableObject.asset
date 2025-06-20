@@ -13,9 +13,7 @@ MonoBehaviour:
   m_Name: NodeScriptableObject
   m_EditorClassIdentifier: 
   _nodeList:
-  - _key: AI
-    nodeList:
-    - childIds: 01000000
-      _nodeType: 1
-    - childIds: 
-      _nodeType: 0
+  - _nodeList:
+    - _nodeType: 1
+    - _nodeType: 0
+    _key: AI
