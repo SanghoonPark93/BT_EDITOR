@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace BT.Util
@@ -59,8 +58,11 @@ namespace BT.Util
 
 		public static Type GetBTType(string typeName) 
 		{
-			if(_btTypeDict.ContainsKey(typeName) == false)
-				_btTypeDict.Add(typeName, Type.GetType($"BT.{typeName}"));
+			if(_btTypeDict.ContainsKey(typeName) == false) 
+			{
+				var type = Type.GetType($"BT.{typeName}");
+				_btTypeDict.Add(typeName, type);
+			}
 
 			return _btTypeDict[typeName];
 		}

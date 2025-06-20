@@ -9,7 +9,8 @@ namespace BT
 	[Serializable]
 	public partial class Node
 	{
-		protected string _typeName = "NODE";
+		[SerializeField]
+		protected string _typeName = "Node";
 
 		protected List<int> _childIds = new List<int>();
 
