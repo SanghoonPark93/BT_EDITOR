@@ -13,9 +13,23 @@ MonoBehaviour:
   m_Name: NodeScriptableObject
   m_EditorClassIdentifier: 
   _nodeList:
-  - _nodeList:
-    - _typeName: RootNode
-      _nodeType: 1
-    - _typeName: Node
-      _nodeType: 0
-    _key: AI
+  - _key: AI
+    _flatNodeDataList:
+    - id: 0
+      typeName: RootNode
+      rect:
+        serializedVersion: 2
+        x: 438
+        y: 288
+        width: 100
+        height: 50
+      childIds: 01000000
+    - id: 1
+      typeName: ConditionNode
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 434
+        width: 150
+        height: 100
+      childIds: 

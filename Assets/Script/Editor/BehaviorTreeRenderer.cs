@@ -62,6 +62,8 @@ namespace BT
 			}
 		}
 
+		private bool isSearchingTargetNode => (_searchingForConnectedNode == true && _prevSelect != null);
+
 		[MenuItem("Window/Behavior Tree")]
 		private static void Initialize()
 		{
@@ -137,7 +139,7 @@ namespace BT
 				return;
 
 			//연결할 노드를 탐색중이라면
-			if(_searchingForConnectedNode == true && _prevSelect != null)
+			if(isSearchingTargetNode)
 			{
 				var mouseRect = new Rect(_mousePos.x, _mousePos.y, 10, 10);
 
@@ -173,39 +175,40 @@ namespace BT
 
 		private void Save()
 		{
-			if(TargetIsNull() || _root == null || scriptableObj == null)
+			if(_root == null || scriptableObj == null || TargetIsNull())
 				return;
 
-			var controller = scriptableObj.GetNodeController(_target.gameObject.name);
-			if(controller == null) 
-			{
-				controller = new NodeController(_target.gameObject.name);
-				scriptableObj.SetNodeController(controller);
-			}
-
-			var saveList = _root.GetAllNodes().Distinct().ToList();
+			var saveList = _root.GetAllNodes();
+			var controller = new NodeController(_target.gameObject.name);
 			controller.SetNodeList(saveList);
+			scriptableObj.SetNodeController(controller);
 
 			EditorUtility.SetDirty(scriptableObj);
 			AssetDatabase.SaveAssets();
-
-			Debug.Log($"Save Done : {saveList.Count} nodes");
+			Debug.Log($"Saved {saveList.Count} nodes");
 		}
 
 		private void Load()
 		{
- 			if(TargetIsNull() || scriptableObj == null)
+			if(scriptableObj == null || TargetIsNull())
 				return;
 
-			_tempNodes.Clear();
-			_root = null;
-
 			var controller = scriptableObj.GetNodeController(_target.gameObject.name);
-			if(controller != null && controller.Root != null)
-			{				
+			if(controller != null)
+			{
+				controller.Initialize(); // 노드 재생성 및 연결
 				_root = controller.Root;
-				ResetTreeNodesIds();
-				Debug.Log($"Load Done : {_root.GetAllNodes().Count} nodes");			
+				ResetTreeNodesIds(); // 필요시
+				Debug.Log($"Loaded {_root?.GetAllNodes().Count ?? 0} nodes");
+			}
+		}
+
+		private void SetParentRecursive(Node node)
+		{
+			foreach(var child in node.childs)
+			{
+				child.SetParent(node);
+				SetParentRecursive(child);
 			}
 		}
 
@@ -330,23 +333,23 @@ namespace BT
 		private void ConnectNode()
 		{
 			//연결할 노드를 탐색중인가
-			if(_searchingForConnectedNode == true && _curSelect != null)
+			if(isSearchingTargetNode == false)
+				return;
+
+			if((_prevSelect != _curSelect) && (_curSelect.parent == null))
 			{
-				if((_prevSelect != _curSelect) && (_curSelect.parent == null))
-				{
-					//선택 된 노드를 자식에 추가
-					_prevSelect.AddChild(_curSelect);
+				//선택 된 노드를 자식에 추가
+				_prevSelect.AddChild(_curSelect);
 
-					if(_tempNodes.Contains(_curSelect))
-						_tempNodes.Remove(_curSelect);
+				if(_tempNodes.Contains(_curSelect))
+					_tempNodes.Remove(_curSelect);
 
-					ResetTreeNodesIds();
-				}
-
-				//연결 노드 탐색 중지
-				_searchingForConnectedNode = false;
-				_curSelect = null;
+				ResetTreeNodesIds();
 			}
+
+			//연결 노드 탐색 중지
+			_searchingForConnectedNode = false;
+			_curSelect = null;
 		}
 
 		private void OnFileDropped(MonoScript script)

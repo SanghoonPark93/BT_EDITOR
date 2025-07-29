@@ -12,15 +12,18 @@ namespace BT
 		[SerializeField]
 		protected string _typeName = "Node";
 
-		protected List<int> _childIds = new List<int>();
-
 		[NonSerialized]
 		protected List<Node> _childs = new List<Node>();
 
 		[SerializeField]
 		protected BTType _nodeType = BTType.NONE;
 
-		public Node parent { get; private set; }
+		[NonSerialized]		
+		private Node _parent;
+
+		public Node parent => _parent;
+
+		public void SetParent(Node p) => _parent = p;
 
 		public int id { get; protected set; }
 
@@ -33,25 +36,6 @@ namespace BT
 		public virtual BtState GetState()
 		{
 			return BtState.SUCCESS;
-		}			
-
-		public void SetData(NodeController controller, Node data)
-		{
-			id = data.id;
-			_nodeType = data.nodeType;			
-
-			foreach(var id in data._childIds)
-			{
-				var child = controller.GetChild(id);
-
-				if(child == null)
-					continue;
-
-				var node = new Node();
-				node.SetData(controller, child);
-
-				AddChild(node);
-			}
 		}
 
 		/// <summary>
@@ -65,13 +49,11 @@ namespace BT
 			var lastId = id;
 
 			//동일 뎁스에서 좌측에 있을 수록 우선순위가 높은 노드
-			_childs = _childs.OrderBy(m => m.rect.x).ToList();
-			_childIds.Clear();
+			_childs = _childs.OrderBy(m => m.rect.x).ToList();			
 
 			foreach(var child in _childs)
 			{
-				var curId = lastId + 1;
-				_childIds.Add(curId);
+				var curId = lastId + 1;				
 				lastId = child.InitializeId(curId);
 			}
 
@@ -103,8 +85,7 @@ namespace BT
 		{
 			if(_childs.Contains(child))
 				return;
-
-			_childIds.Add(child.id);
+			
 			_childs.Add(child);
 		}
 
@@ -113,7 +94,6 @@ namespace BT
 			if(_childs.Contains(child) == false)
 				return;
 
-			_childIds.Remove(child.id);
 			_childs.Remove(child);
 		}
 
@@ -147,7 +127,7 @@ namespace BT
 			if(parent != null)
 			{
 				parent.RemoveChild(this);
-				parent = null;
+				SetParent(null);
 			}
 
 			_childs.Clear();
