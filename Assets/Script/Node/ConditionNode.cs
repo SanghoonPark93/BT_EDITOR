@@ -58,15 +58,11 @@ namespace BT
 #if UNITY_EDITOR
         public override void DrawDescription()
         {
-            var drawn = GUI.Window(id, rect, windowId =>
-            {
-                EditorGUILayout.BeginVertical();
-                EditorGUILayout.LabelField("Condition");
-                MethodName = EditorGUILayout.TextField("Method", MethodName ?? "");
-                EditorGUILayout.EndVertical();
-                GUI.DragWindow();
-            }, id.ToString());
-            SetRect(drawn.x, drawn.y);
+            GUI.Box(rect, id.ToString());
+            GUI.Label(new Rect(rect.x + 5f, rect.y + 22f, rect.width - 10f, 20f),
+                "Condition");
+            MethodName = EditorGUI.TextField(new Rect(rect.x + 5f, rect.y + 44f,
+                rect.width - 10f, 20f), MethodName ?? string.Empty);
         }
 #endif
     }

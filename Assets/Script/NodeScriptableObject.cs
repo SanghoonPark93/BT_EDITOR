@@ -12,6 +12,19 @@ namespace BT
         public NodeController GetNodeController(string key) =>
             _nodeList?.Find(controller => controller != null && controller.key == key);
 
+        public string GetOnlyTreeKey()
+        {
+            if (_nodeList == null) return null;
+            string key = null;
+            foreach (var controller in _nodeList)
+            {
+                if (controller == null) continue;
+                if (key != null) return null;
+                key = controller.key;
+            }
+            return key;
+        }
+
         public void SetNodeController(NodeController controller)
         {
             if (controller == null) throw new ArgumentNullException(nameof(controller));

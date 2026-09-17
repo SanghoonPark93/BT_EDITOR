@@ -81,6 +81,13 @@ namespace BT
         private string _treeKey = string.Empty;
         private int _lastFocusedNodeId = -1;
         private double _nextDebugRepaint;
+        private Node _dragNode;
+        private int _lastRenderedNodeId = -1;
+        private BtState _lastRenderedNodeState;
+        private string _lastRenderedNodeError;
+        private bool _lastRenderedAnimating;
+        private float _lastRenderedTickTime = -1f;
+        private bool _lastRenderedRecentActivity;
 
         private void OnEnable()
         {
@@ -100,15 +107,22 @@ namespace BT
             var selected = Selection.activeGameObject == null ? null :
                 Selection.activeGameObject.GetComponentInParent<AI>();
             if(selected == null || (selected == _target && _root != null)) return;
+            SelectTarget(selected);
+        }
+
+        private void SelectTarget(AI selected)
+        {
             _target = selected;
             var asset = Application.isPlaying ? selected.ActiveTreeAsset ?? selected.TreeAsset :
                 selected.TreeAsset;
-            if(asset != null) scriptableObj = asset;
+            scriptableObj = asset != null ? asset :
+                Resources.Load<NodeScriptableObject>("NodeScriptableObject");
             _treeKey = Application.isPlaying ? selected.ActiveTreeKey ?? selected.TreeKey :
                 selected.TreeKey;
-            if(string.IsNullOrWhiteSpace(_treeKey)) _treeKey = selected.gameObject.name;
+            if(string.IsNullOrWhiteSpace(_treeKey))
+                _treeKey = scriptableObj?.GetOnlyTreeKey() ?? selected.gameObject.name;
             _lastFocusedNodeId = -1;
-            Load();
+            Load(false);
             Repaint();
         }
 
@@ -122,10 +136,28 @@ namespace BT
                 scriptableObj = _target.ActiveTreeAsset;
                 _treeKey = _target.ActiveTreeKey;
                 _lastFocusedNodeId = -1;
-                Load();
+                Load(false);
             }
             if(EditorApplication.timeSinceStartup < _nextDebugRepaint) return;
-            _nextDebugRepaint = EditorApplication.timeSinceStartup + 0.1d;
+            var animating = _target.ActiveNodeState == BtState.RUNNING &&
+                Time.realtimeSinceStartup - _target.LastNodeTickTime < 0.75f;
+            var recentActivity = _target.LastNodeTickTime >= 0f &&
+                Time.realtimeSinceStartup - _target.LastNodeTickTime < 0.75f;
+            var changed = _lastRenderedNodeId != _target.ActiveNodeId ||
+                _lastRenderedNodeState != _target.ActiveNodeState ||
+                _lastRenderedNodeError != _target.LastNodeError ||
+                _lastRenderedAnimating != animating ||
+                _lastRenderedRecentActivity != recentActivity ||
+                (recentActivity && _lastRenderedTickTime != _target.LastNodeTickTime);
+            if(!animating && !changed) return;
+            _lastRenderedNodeId = _target.ActiveNodeId;
+            _lastRenderedNodeState = _target.ActiveNodeState;
+            _lastRenderedNodeError = _target.LastNodeError;
+            _lastRenderedAnimating = animating;
+            _lastRenderedRecentActivity = recentActivity;
+            _lastRenderedTickTime = _target.LastNodeTickTime;
+            _nextDebugRepaint = EditorApplication.timeSinceStartup +
+                (animating ? 1d / 30d : 0.1d);
             Repaint();
         }
 
@@ -133,19 +165,23 @@ namespace BT
         {
             if(!Application.isPlaying || _target == null || _root == null ||
                 _target.ActiveTreeAsset != scriptableObj ||
-                _target.ActiveTreeKey != GetTreeKey() ||
-                _target.ActiveNodeId < 0 ||
-                Time.realtimeSinceStartup - _target.LastNodeTickTime > 0.75f)
+                _target.ActiveTreeKey != GetTreeKey())
                 return null;
-            return _root.GetAllNodes().FirstOrDefault(node => node.id == _target.ActiveNodeId);
+            if(_target.ActiveNodeId < 0 ||
+                _target.ActiveNodeState == BtState.FAILUER)
+                return _root;
+            return _root.GetAllNodes().FirstOrDefault(node => node.id == _target.ActiveNodeId)
+                ?? _root;
         }
 
-        private static void DrawDebugHighlight(Node node, BtState state)
+        private static void DrawDebugHighlight(Node node, BtState state,
+            bool animate, bool rootFallback)
         {
             var r = new Rect(node.rect.x - 5f, node.rect.y - 5f,
                 node.rect.width + 10f, node.rect.height + 10f);
             var previous = Handles.color;
-            Handles.color = state == BtState.RUNNING ? Color.yellow :
+            Handles.color = rootFallback ? new Color(0.78f, 0.58f, 0.94f) :
+                state == BtState.RUNNING ? Color.yellow :
                 state == BtState.SUCCESS ? Color.green : Color.red;
             Handles.DrawAAPolyLine(3f, new[]
             {
@@ -153,36 +189,132 @@ namespace BT
                 new Vector3(r.xMax, r.yMax), new Vector3(r.x, r.yMax),
                 new Vector3(r.x, r.y)
             });
+            if (animate)
+            {
+                var phase = (float)EditorApplication.timeSinceStartup;
+                var pulse = (Mathf.Sin(phase * 6f) + 1f) * 0.5f;
+                var halo = new Rect(r.x - 4f - pulse * 3f, r.y - 4f - pulse * 3f,
+                    r.width + 8f + pulse * 6f, r.height + 8f + pulse * 6f);
+                Handles.color = new Color(1f, 0.78f, 0.13f, 0.2f + pulse * 0.55f);
+                Handles.DrawAAPolyLine(2f + pulse * 2f, new[]
+                {
+                    new Vector3(halo.x, halo.y), new Vector3(halo.xMax, halo.y),
+                    new Vector3(halo.xMax, halo.yMax), new Vector3(halo.x, halo.yMax),
+                    new Vector3(halo.x, halo.y)
+                });
+                Handles.color = Color.yellow;
+                Handles.DrawSolidDisc(PointOnBorder(r, Mathf.Repeat(phase * 0.45f, 1f)),
+                    Vector3.forward, 4f);
+            }
             Handles.color = previous;
+        }
+
+        private static Vector3 PointOnBorder(Rect r, float progress)
+        {
+            var distance = progress * 2f * (r.width + r.height);
+            if (distance < r.width) return new Vector3(r.x + distance, r.y);
+            distance -= r.width;
+            if (distance < r.height) return new Vector3(r.xMax, r.y + distance);
+            distance -= r.height;
+            if (distance < r.width) return new Vector3(r.xMax - distance, r.yMax);
+            distance -= r.width;
+            return new Vector3(r.x, r.yMax - distance);
+        }
+
+        private void DrawRecentLeafStates(Node activeNode)
+        {
+            if(!Application.isPlaying || _target == null || _root == null) return;
+            foreach(var node in _root.GetAllNodes())
+            {
+                if(node == activeNode || node.childs.Count != 0 ||
+                    !_target.TryGetRecentNodeState(node.id, out var state)) continue;
+                var color = state == BtState.RUNNING ? Color.yellow :
+                    state == BtState.SUCCESS ? Color.green :
+                    new Color(0.65f, 0.65f, 0.65f, 0.85f);
+                var rect = node.rect;
+                var previous = Handles.color;
+                Handles.color = color;
+                Handles.DrawAAPolyLine(2f, new[]
+                {
+                    new Vector3(rect.x - 2f, rect.y - 2f),
+                    new Vector3(rect.xMax + 2f, rect.y - 2f),
+                    new Vector3(rect.xMax + 2f, rect.yMax + 2f),
+                    new Vector3(rect.x - 2f, rect.yMax + 2f),
+                    new Vector3(rect.x - 2f, rect.y - 2f)
+                });
+                Handles.color = previous;
+                if(state == BtState.FAILUER) continue;
+                var style = new GUIStyle(EditorStyles.miniBoldLabel);
+                style.normal.textColor = color;
+                GUI.Label(new Rect(rect.x + 5f, rect.yMax - 18f,
+                    rect.width - 10f, 16f),
+                    state == BtState.RUNNING ? "RUNNING" :
+                    "SUCCESS", style);
+            }
         }
         private void OnGUI()
         {
             var current = Event.current;
-            _target = EditorGUILayout.ObjectField("Target", _target, typeof(AI), true) as AI;
-            scriptableObj = EditorGUILayout.ObjectField("Tree Asset", scriptableObj,
+            const float margin = 4f;
+            const float rowHeight = 20f;
+            const float rowGap = 2f;
+            var row = new Rect(margin, margin,
+                Mathf.Max(0f, position.width - margin * 2f), rowHeight);
+            var selectedTarget = EditorGUI.ObjectField(row, "Target", _target,
+                typeof(AI), true) as AI;
+            if(selectedTarget != _target)
+            {
+                if(selectedTarget != null) SelectTarget(selectedTarget);
+                else _target = null;
+            }
+            row.y += rowHeight + rowGap;
+            scriptableObj = EditorGUI.ObjectField(row, "Tree Asset", scriptableObj,
                 typeof(NodeScriptableObject), false) as NodeScriptableObject;
-            _treeKey = EditorGUILayout.TextField("Tree Key", _treeKey);
-            if(GUILayout.Button("New Tree Asset")) CreateTreeAsset();
-
-            if(GUILayout.Button("Save")) Save();
-            if(GUILayout.Button("Load")) Load();
-            if(GUILayout.Button("Import Legacy JSON")) ImportLegacy();
-            if(GUILayout.Button("Reset")) Reset();
-            if(GUILayout.Button("Print Member")) PrintLog();
-            var arrange = GUILayout.Button("Auto Layout");
+            row.y += rowHeight + rowGap;
+            _treeKey = EditorGUI.TextField(row, "Tree Key", _treeKey);
+            row.y += rowHeight + rowGap;
+            if(GUI.Button(row, "New Tree Asset")) CreateTreeAsset();
+            row.y += rowHeight + rowGap;
+            if(GUI.Button(row, "Save")) Save();
+            row.y += rowHeight + rowGap;
+            if(GUI.Button(row, "Load")) Load();
+            row.y += rowHeight + rowGap;
+            if(GUI.Button(row, "Import Legacy JSON")) ImportLegacy();
+            row.y += rowHeight + rowGap;
+            if(GUI.Button(row, "Reset")) Reset();
+            row.y += rowHeight + rowGap;
+            if(GUI.Button(row, "Print Member")) PrintLog();
+            row.y += rowHeight + rowGap;
+            var arrange = GUI.Button(row, "Auto Layout");
+            row.y += rowHeight + rowGap;
             var debugNode = GetDebugNode();
+            var rootFallback = debugNode == _root && debugNode != null &&
+                (_target.ActiveNodeId < 0 ||
+                    _target.ActiveNodeState == BtState.FAILUER);
+            var animating = debugNode != null && !rootFallback &&
+                _target.ActiveNodeState == BtState.RUNNING &&
+                Time.realtimeSinceStartup - _target.LastNodeTickTime < 0.75f;
             if(Application.isPlaying && _target != null)
             {
                 var nodeName = debugNode is ActionNode action &&
                     !string.IsNullOrWhiteSpace(action.MethodName) ? action.MethodName :
                     debugNode?.GetType().Name;
-                EditorGUILayout.LabelField(debugNode == null ? "Runtime: no active node" :
-                    $"Runtime: {nodeName}  [{_target.ActiveNodeState}]", EditorStyles.helpBox);
+                if(!string.IsNullOrEmpty(_target.LastNodeError))
+                {
+                    row.height = 36f;
+                    EditorGUI.HelpBox(row, _target.LastNodeError, MessageType.Error);
+                }
+                else
+                    EditorGUI.LabelField(row, rootFallback ?
+                        "Runtime: ROOT [NO ACTIVE NODE]" :
+                        debugNode == null ? "Runtime: no active node" :
+                        $"{(animating ? "RUNNING" : "LAST")}  {nodeName}  " +
+                        $"[{_target.ActiveNodeState}]", EditorStyles.helpBox);
+                row.y += row.height + rowGap;
             }
 
-            var anchor = GUILayoutUtility.GetRect(1f, 1f, GUILayout.ExpandWidth(true));
-            var viewport = new Rect(0f, anchor.yMax, position.width,
-                Mathf.Max(0f, position.height - anchor.yMax));
+            var viewport = new Rect(0f, row.y, position.width,
+                Mathf.Max(0f, position.height - row.y));
             if(arrange || _layoutRequested)
             {
                 _layoutRequested = false;
@@ -208,7 +340,16 @@ namespace BT
                 if(current.type == EventType.MouseDown)
                 {
                     if(current.button == (int)MouseButtonState.Left && isSelected)
-                        ConnectNode();
+                    {
+                        if(isSearchingTargetNode) ConnectNode();
+                        else if(_mousePos.y <= _curSelect.rect.y + 24f ||
+                            _curSelect is RootNode || _curSelect is SelectorNode ||
+                            _curSelect is SequenceNode)
+                        {
+                            _dragNode = _curSelect;
+                            current.Use();
+                        }
+                    }
                     else if(current.button == (int)MouseButtonState.Right)
                     {
                         var menu = new GenericMenu();
@@ -216,9 +357,18 @@ namespace BT
                         current.Use();
                     }
                 }
+                else if(current.type == EventType.MouseDrag && _dragNode != null)
+                {
+                    var rect = _dragNode.rect;
+                    _dragNode.SetRect(Mathf.Max(0f, rect.x + current.delta.x),
+                        Mathf.Max(0f, rect.y + current.delta.y));
+                    current.Use();
+                    Repaint();
+                }
                 else if(current.type == EventType.MouseUp && isSelected)
                     ResetTreeNodesIds();
             }
+            if(current.type == EventType.MouseUp) _dragNode = null;
 
             if(DeleteNode()) return;
             HandleScriptDrag(current, viewport);
@@ -233,11 +383,12 @@ namespace BT
             if(_root != null) ConnectChild(_root);
             if(_root != null) _root.DrawBackgroundTree();
             _tempNodes.ForEach(node => node.DrawBackgroundTree());
-            BeginWindows();
             if(_root != null) _root.DrawNode();
             _tempNodes.ForEach(node => node.DrawNode());
-            EndWindows();
-            if(debugNode != null) DrawDebugHighlight(debugNode, _target.ActiveNodeState);
+            DrawRecentLeafStates(debugNode);
+            if(debugNode != null)
+                DrawDebugHighlight(debugNode, _target.ActiveNodeState,
+                    animating, rootFallback);
             GUI.EndScrollView();
         }
 
@@ -432,15 +583,23 @@ namespace BT
 				Debug.LogError($"Failed to save behavior tree: {exception.Message}");
 			}
 		}
-		private void Load()
+		private void Load(bool reportMissing = true)
 		{
 			if(scriptableObj == null)
 				return;
 
 			try
 			{
-                var controller = scriptableObj.GetNodeController(GetTreeKey());
-                if(controller == null) throw new InvalidOperationException("Saved tree was not found.");
+                var key = GetTreeKey();
+                var controller = scriptableObj.GetNodeController(key);
+                if(controller == null)
+                {
+                    Reset();
+                    if(reportMissing)
+                        Debug.LogWarning($"No saved behavior tree with key '{key}' in asset " +
+                            $"'{AssetDatabase.GetAssetPath(scriptableObj)}'. Check Tree Key or save the tree first.");
+                    return;
+                }
                 controller.Initialize();
 				var loadedRoot = controller.Root;
 				_tempNodes.Clear();

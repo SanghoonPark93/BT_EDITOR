@@ -39,18 +39,15 @@ namespace BT.Sample
 #if UNITY_EDITOR
         public override void DrawDescription()
         {
-            var drawn = GUI.Window(id, rect, _ =>
-            {
-                GUI.Label(new Rect(8f, 7f, rect.width - 16f, 20f),
-                    "COOLDOWN ACTION", EditorStyles.boldLabel);
-                MethodName = EditorGUI.TextField(new Rect(8f, 31f, rect.width - 16f, 20f),
-                    MethodName ?? string.Empty);
-                GUI.Label(new Rect(8f, 58f, 30f, 20f), "Sec");
-                _cooldownSeconds = Mathf.Max(0f, EditorGUI.FloatField(
-                    new Rect(38f, 58f, rect.width - 46f, 20f), _cooldownSeconds));
-                GUI.DragWindow(new Rect(0f, 0f, rect.width, 24f));
-            }, id.ToString());
-            SetRect(drawn.x, drawn.y);
+            GUI.Box(rect, id.ToString());
+            GUI.Label(new Rect(rect.x + 5f, rect.y + 22f, rect.width - 10f, 20f),
+                "COOLDOWN ACTION", EditorStyles.boldLabel);
+            MethodName = EditorGUI.TextField(new Rect(rect.x + 5f, rect.y + 44f,
+                rect.width - 10f, 20f), MethodName ?? string.Empty);
+            GUI.Label(new Rect(rect.x + 5f, rect.y + 68f, 32f, 20f), "Sec");
+            _cooldownSeconds = Mathf.Max(0f, EditorGUI.FloatField(
+                new Rect(rect.x + 40f, rect.y + 68f, rect.width - 45f, 20f),
+                _cooldownSeconds));
         }
 #endif
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace BT
@@ -12,9 +13,18 @@ namespace BT
         private float _delayDef;
         private int _traceDepth = -1;
         private bool _hasRunningNode;
+        private bool _hasNodeException;
+        private readonly Dictionary<int, NodeExecution> _nodeExecutions =
+            new Dictionary<int, NodeExecution>();
+        private struct NodeExecution
+        {
+            public BtState State;
+            public float Time;
+        }
         public int ActiveNodeId { get; private set; } = -1;
         public BtState ActiveNodeState { get; private set; }
         public float LastNodeTickTime { get; private set; } = -1f;
+        public string LastNodeError { get; private set; }
         public NodeScriptableObject TreeAsset => _treeAsset;
         public string TreeKey => _treeKey;
         public NodeScriptableObject ActiveTreeAsset { get; private set; }
@@ -58,6 +68,12 @@ namespace BT
             ActiveTreeAsset = null;
             ActiveTreeKey = null;
             ActiveNodeId = -1;
+            LastNodeTickTime = -1f;
+            LastNodeError = null;
+            _traceDepth = -1;
+            _hasRunningNode = false;
+            _hasNodeException = false;
+            _nodeExecutions.Clear();
             _isStop = false;
             if (string.IsNullOrWhiteSpace(key)) key = gameObject.name;
             var asset = _treeAsset != null ? _treeAsset :
@@ -93,15 +109,59 @@ namespace BT
                 if (_delayUpdate > 0f) return;
                 _delayUpdate = _delayDef;
             }
-            UpdateBody();
+            try
+            {
+                UpdateBody();
+            }
+            catch (Exception exception)
+            {
+                _isStop = true;
+                if (string.IsNullOrEmpty(LastNodeError))
+                {
+                    ActiveNodeId = -1;
+                    LastNodeError = exception.Message;
+                    LastNodeTickTime = Time.realtimeSinceStartup;
+                }
+                Debug.LogError($"Behavior tree '{ActiveTreeKey}' stopped at node " +
+                    $"{ActiveNodeId}: {exception}", this);
+            }
         }
 
         protected virtual void UpdateBody()
         {
             _traceDepth = -1;
             _hasRunningNode = false;
+            _hasNodeException = false;
             ActiveNodeId = -1;
+            LastNodeError = null;
             _btRoot.Tick();
+        }
+
+        internal void RecordNodeException(Node node, Exception exception)
+        {
+            if (_hasNodeException) return;
+            _hasNodeException = true;
+            ActiveNodeId = node.id;
+            ActiveNodeState = BtState.FAILUER;
+            LastNodeError = $"{node.GetType().Name} (#{node.id}): {exception.Message}";
+            LastNodeTickTime = Time.realtimeSinceStartup;
+            _nodeExecutions[node.id] = new NodeExecution
+            {
+                State = BtState.FAILUER,
+                Time = LastNodeTickTime
+            };
+        }
+
+        public bool TryGetRecentNodeState(int nodeId, out BtState state)
+        {
+            if (_nodeExecutions.TryGetValue(nodeId, out var execution) &&
+                Time.realtimeSinceStartup - execution.Time < 0.75f)
+            {
+                state = execution.State;
+                return true;
+            }
+            state = default;
+            return false;
         }
 
         internal void RecordNodeState(Node node, BtState state)
@@ -125,6 +185,11 @@ namespace BT
                 _traceDepth = depth;
             }
             LastNodeTickTime = Time.realtimeSinceStartup;
+            _nodeExecutions[node.id] = new NodeExecution
+            {
+                State = state,
+                Time = LastNodeTickTime
+            };
         }
 
         protected void SetDelayTime(float delay)

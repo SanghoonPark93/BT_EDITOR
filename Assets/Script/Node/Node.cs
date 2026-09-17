@@ -35,9 +35,17 @@ namespace BT
         public abstract BtState GetState();
         public BtState Tick()
         {
-            var state = GetState();
-            if (_ai != null) _ai.RecordNodeState(this, state);
-            return state;
+            try
+            {
+                var state = GetState();
+                if (_ai != null) _ai.RecordNodeState(this, state);
+                return state;
+            }
+            catch (Exception exception)
+            {
+                if (_ai != null) _ai.RecordNodeException(this, exception);
+                throw;
+            }
         }
 
         public virtual void Reset()
@@ -127,14 +135,9 @@ namespace BT
 
         public virtual void DrawDescription()
         {
-            var drawn = GUI.Window(id, rect, windowId =>
-            {
-                EditorGUILayout.BeginVertical();
-                EditorGUILayout.LabelField(nodeType.ToString());
-                EditorGUILayout.EndVertical();
-                GUI.DragWindow();
-            }, id.ToString());
-            SetRect(drawn.x, drawn.y);
+            GUI.Box(rect, id.ToString());
+            GUI.Label(new Rect(rect.x + 5f, rect.y + 22f,
+                rect.width - 10f, 20f), nodeType.ToString());
         }
 
         public void PrintChild()

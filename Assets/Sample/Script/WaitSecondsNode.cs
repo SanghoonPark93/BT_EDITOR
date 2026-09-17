@@ -29,13 +29,13 @@ namespace BT.Sample
 #if UNITY_EDITOR
         public override void DrawDescription()
         {
-            var drawn = GUI.Window(id, rect, _ =>
-            {
-                EditorGUILayout.LabelField("WAIT", EditorStyles.boldLabel);
-                _seconds = EditorGUILayout.FloatField("Seconds", _seconds);
-                GUI.DragWindow(new Rect(0f, 0f, rect.width, 22f));
-            }, id.ToString());
-            SetRect(drawn.x, drawn.y);
+            GUI.Box(rect, id.ToString());
+            GUI.Label(new Rect(rect.x + 5f, rect.y + 22f, rect.width - 10f, 20f),
+                "WAIT", EditorStyles.boldLabel);
+            GUI.Label(new Rect(rect.x + 5f, rect.y + 44f, 58f, 20f), "Seconds");
+            _seconds = Mathf.Max(0f, EditorGUI.FloatField(
+                new Rect(rect.x + 65f, rect.y + 44f, rect.width - 70f, 20f),
+                _seconds));
         }
 #endif
     }

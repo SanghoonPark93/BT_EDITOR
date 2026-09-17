@@ -66,18 +66,15 @@ namespace BT
 
         public override void DrawDescription()
         {
-            var drawn = GUI.Window(id, rect, windowId =>
+            var label = new GUIStyle(EditorStyles.boldLabel)
             {
-                var label = new GUIStyle(EditorStyles.boldLabel)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    normal = { textColor = Color.white }
-                };
-                GUI.Label(new Rect(12f, 10f, rect.width - 24f, 26f), "SEQUENCE", label);
-                GUI.Label(new Rect(12f, 36f, rect.width - 24f, 22f), "1 → 2 → 3", label);
-                GUI.DragWindow();
-            }, GUIContent.none, GUIStyle.none);
-            SetRect(drawn.x, drawn.y);
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = Color.white }
+            };
+            GUI.Label(new Rect(rect.x + 12f, rect.y + 10f,
+                rect.width - 24f, 26f), "SEQUENCE", label);
+            GUI.Label(new Rect(rect.x + 12f, rect.y + 36f,
+                rect.width - 24f, 22f), "1 → 2 → 3", label);
         }
 #endif
     }
