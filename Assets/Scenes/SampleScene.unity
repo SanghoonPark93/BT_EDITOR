@@ -38,7 +38,6 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -257,6 +256,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e32b08839010114a9dfbe3e20894171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _treeAsset: {fileID: 0}
+  _treeKey: 
+  _initializeAutomatically: 1
   _showLog: 0
   _hp: 1
   _head: {fileID: 0}
@@ -646,6 +648,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e32b08839010114a9dfbe3e20894171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _treeAsset: {fileID: 0}
+  _treeKey: 
+  _initializeAutomatically: 1
   _showLog: 1
   _hp: 1
   _head: {fileID: 0}
@@ -4301,6 +4306,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e32b08839010114a9dfbe3e20894171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _treeAsset: {fileID: 11400000, guid: f9fe9b7f8a726694d947a71826b4d264, type: 2}
+  _treeKey: AI
+  _initializeAutomatically: 1
   _showLog: 0
   _hp: 0
   _head: {fileID: 0}
@@ -5020,6 +5028,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e32b08839010114a9dfbe3e20894171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _treeAsset: {fileID: 0}
+  _treeKey: 
+  _initializeAutomatically: 1
   _showLog: 0
   _hp: 1
   _head: {fileID: 0}
@@ -5553,6 +5564,7 @@ Terrain:
   m_DetailObjectDensity: 1
   m_HeightmapPixelError: 5
   m_SplatMapDistance: 1000
+  m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1

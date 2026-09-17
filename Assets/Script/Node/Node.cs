@@ -1,185 +1,152 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
+#if UNITY_EDITOR
 using System.Linq;
 using UnityEditor;
-using UnityEngine;
+#endif
 
 namespace BT
 {
-	[Serializable]
-	public partial class Node
-	{
-		[SerializeField]
-		protected string _typeName = "Node";
+    [Serializable]
+    public abstract partial class Node
+    {
+        [SerializeField] protected string _typeName = "Node";
+        [SerializeField] protected BTType _nodeType = BTType.NONE;
+        [NonSerialized] protected List<Node> _childs = new List<Node>();
+        [NonSerialized] protected Node _parent;
+        [NonSerialized] protected AI _ai;
 
-		[NonSerialized]
-		protected List<Node> _childs = new List<Node>();
+        public int id { get; private set; }
+        public Node parent => _parent;
+        public BTType nodeType => _nodeType;
+        public List<Node> childs => _childs;
+        public string typeName => _typeName;
 
-		[SerializeField]
-		protected BTType _nodeType = BTType.NONE;
+        public void SetId(int value) => id = value;
+        public void SetParent(Node value) => _parent = value;
 
-		[NonSerialized]		
-		private Node _parent;
+        public virtual void Bind(AI ai)
+        {
+            _ai = ai;
+            foreach (var child in _childs) child.Bind(ai);
+        }
 
-		public Node parent => _parent;
+        public abstract BtState GetState();
+        public BtState Tick()
+        {
+            var state = GetState();
+            if (_ai != null) _ai.RecordNodeState(this, state);
+            return state;
+        }
 
-		public void SetParent(Node p) => _parent = p;
+        public virtual void Reset()
+        {
+            foreach (var child in _childs) child.Reset();
+        }
 
-		public int id { get; protected set; }
+        public bool AddChild(Node child)
+        {
+            if (child == null || child is RootNode || child == this || child._parent != null ||
+                _childs.Contains(child) || child.Contains(this))
+                return false;
+            _childs.Add(child);
+            child._parent = this;
+            return true;
+        }
 
-		public BTType nodeType => _nodeType;
+        public bool RemoveChild(Node child)
+        {
+            if (!_childs.Remove(child)) return false;
+            child._parent = null;
+            child.Reset();
+            return true;
+        }
 
-		public List<Node> childs => _childs;
+        private bool Contains(Node target)
+        {
+            if (this == target) return true;
+            foreach (var child in _childs)
+                if (child.Contains(target)) return true;
+            return false;
+        }
 
-		public string typeName => _typeName;
+        public List<Node> GetAllNodes()
+        {
+            var result = new List<Node> { this };
+            foreach (var child in _childs) result.AddRange(child.GetAllNodes());
+            return result;
+        }
 
-		public virtual BtState GetState()
-		{
-			return BtState.SUCCESS;
-		}
-
-		/// <summary>
-		/// 파라미터 id를 시작으로 자신과 자식 노드들의 id를 세팅해준다
-		/// </summary>
-		/// <param name="id">자신에게 부여 받은 id</param>
-		/// <returns>마지막 자식의 id</returns>
-		public int InitializeId(int id = 0)
-		{
-			SetId(id);
-			var lastId = id;
-
-			//동일 뎁스에서 좌측에 있을 수록 우선순위가 높은 노드
-			_childs = _childs.OrderBy(m => m.rect.x).ToList();			
-
-			foreach(var child in _childs)
-			{
-				var curId = lastId + 1;				
-				lastId = child.InitializeId(curId);
-			}
-
-			return lastId;
-		}
-	}
-
-	//Write editor-related code here.
-	public partial class Node 
-	{
 #if UNITY_EDITOR
+        protected virtual float width => 150f;
+        protected virtual float height => 100f;
+        public Rect rect { get; private set; }
 
-		protected virtual float width => 150f;
-		protected virtual float height => 100f;
+        public void SetRect(float x, float y) => rect = new Rect(x, y, width, height);
 
-		public Rect rect { get; protected set; }
+        public int InitializeId(int value = 0)
+        {
+            id = value;
+            _childs = _childs.OrderBy(child => child.rect.x).ToList();
+            var lastId = value;
+            foreach (var child in _childs) lastId = child.InitializeId(lastId + 1);
+            return lastId;
+        }
 
-		public void SetId(int id) 
-		{
-			this.id = id;
-		}
+        public virtual void DrawBackground() { }
 
-		public void SetRect(float x, float y) 
-		{			
-			this.rect = new Rect(x, y, width, height);
-		}
+        public void DrawBackgroundTree()
+        {
+            DrawBackground();
+            foreach (var child in _childs) child.DrawBackgroundTree();
+        }
 
-		public virtual void AddChild(Node child)
-		{
-			if(_childs.Contains(child))
-				return;
-			
-			_childs.Add(child);
-		}
+        public void DrawNode()
+        {
+            DrawDescription();
+            foreach (var child in _childs) child.DrawNode();
+        }
 
-		public void RemoveChild(Node child)
-		{
-			if(_childs.Contains(child) == false)
-				return;
+        public Node FindSelectNode(Vector2 position)
+        {
+            if (rect.Contains(position)) return this;
+            foreach (var child in _childs)
+            {
+                var found = child.FindSelectNode(position);
+                if (found != null) return found;
+            }
+            return null;
+        }
 
-			_childs.Remove(child);
-		}
+        public void DeleteNode()
+        {
+            if (_parent != null) _parent.RemoveChild(this);
+            _childs.Clear();
+        }
 
-		public List<Node> GetAllNodes()
-		{
-			var list = new List<Node>();
-			list.Add(this);
+        public virtual void DrawDescription()
+        {
+            var drawn = GUI.Window(id, rect, windowId =>
+            {
+                EditorGUILayout.BeginVertical();
+                EditorGUILayout.LabelField(nodeType.ToString());
+                EditorGUILayout.EndVertical();
+                GUI.DragWindow();
+            }, id.ToString());
+            SetRect(drawn.x, drawn.y);
+        }
 
-			_childs.ForEach(child => list.AddRange(child.GetAllNodes()));
+        public void PrintChild()
+        {
+            Debug.Log($"child count : {_childs.Count}");
+            foreach (var child in _childs) Debug.Log($"child id : {child.id}");
+        }
 
-			return list;
-		}
-
-		public Node FindSelectNode(Vector2 mousePos)
-		{
-			if(rect.Contains(mousePos))
-				return this;
-
-			foreach(var child in _childs)
-			{
-				var findSelect = child.FindSelectNode(mousePos);
-				if(findSelect != null)
-					return findSelect;
-			}
-
-			return null;
-		}
-
-		public void DeleteNode()
-		{
-			if(parent != null)
-			{
-				parent.RemoveChild(this);
-				SetParent(null);
-			}
-
-			_childs.Clear();
-		}
-
-		public void PrintChild()
-		{
-			Debug.Log($"child count : {_childs.Count}");
-			_childs.ForEach(m => Debug.Log($"child id : {m.id}"));
-		}
-
-		public void PrintParent()
-		{
-			if(parent != null)
-				Debug.Log(parent.id);
-		}
-
+        public void PrintParent()
+        {
+            if (_parent != null) Debug.Log(_parent.id);
+        }
 #endif
-
-		#region GUI
-
-		public void DrawNode()
-		{
-			DrawWindow();
-			_childs.ForEach(m => m.DrawNode());			
-		}
-
-		public void DrawWindow()
-		{
-#if UNITY_EDITOR
-			DrawDescription();
-#else
-			Debug.Log("This function should only be called in the Unity Editor.");
-#endif
-		}
-
-		/// <summary>
-		/// This function should only be called in the Unity Editor.
-		/// </summary>
-		public virtual void DrawDescription()
-		{
-			var rect = GUI.Window(id, this.rect, (id) =>
-			{
-				EditorGUILayout.BeginVertical();
-				EditorGUILayout.LabelField($"{nodeType}");
-				EditorGUILayout.EndVertical();
-
-				GUI.DragWindow();
-			}, id.ToString());
-
-			SetRect(rect.x, rect.y);
-		}
-		#endregion
-	}
+    }
 }

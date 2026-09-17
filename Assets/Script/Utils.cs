@@ -5,66 +5,45 @@ using UnityEngine;
 
 namespace BT.Util
 {
-	public class Utils
-	{
-		#region JSON
+    public static class Utils
+    {
+        private static readonly Dictionary<string, Type> BtTypes = new Dictionary<string, Type>();
 
-		public static T GetJson<T>(string fileName)
-		{
-			var fileAddress = GetJsonAddress(fileName);
+        public static Type GetBTType(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName)) return null;
+            if (!BtTypes.TryGetValue(typeName, out var type))
+            {
+                type = Type.GetType(typeName) ?? typeof(Node).Assembly.GetType(typeName)
+                    ?? typeof(Node).Assembly.GetType($"BT.{typeName}");
+                if (type != null) BtTypes.Add(typeName, type);
+            }
+            return type;
+        }
 
-			if(HasJson(fileAddress) == false)
-			{
-				Debug.LogError($"File is NULL!!\n{fileAddress}");
-				return default(T);
-			}
+        public static T GetJson<T>(string fileName)
+        {
+            var path = GetJsonAddress(fileName);
+            if (!File.Exists(path))
+            {
+                Debug.LogError($"File is missing: {path}");
+                return default(T);
+            }
+            return JsonUtility.FromJson<T>(File.ReadAllText(path));
+        }
 
-			var load = ReadAllText(fileAddress);
-			return JsonUtility.FromJson<T>(load);
-		}
+        public static string GetJsonAddress(string fileName) =>
+            Path.Combine(Application.dataPath, fileName + ".json");
 
-		public static string GetJsonAddress(string fileName)
-		{
-			return $"{Application.dataPath}/{fileName}.json";
-		}
+        public static bool HasJson(string path) => File.Exists(path);
+        public static string ReadAllText(string path) => File.ReadAllText(path);
+        public static void WriteAllText(string path, string json) => File.WriteAllText(path, json);
 
-		public static bool HasJson(string fileAddress)
-		{
-			return new FileInfo(fileAddress).Exists;
-		}
-
-		public static string ReadAllText(string fileAddress)
-		{
-			return File.ReadAllText(fileAddress);
-		}
-
-		public static void WriteAllText(string fileAddress, string json)
-		{
-			File.WriteAllText(fileAddress, json);
-		}
-
-		#endregion
-
-		public static void EditorLog(string log)
-		{
+        public static void EditorLog(string log)
+        {
 #if UNITY_EDITOR
-
-			Debug.Log(log);
-
+            Debug.Log(log);
 #endif
-		}
-
-		private static Dictionary<string, Type> _btTypeDict = new();
-
-		public static Type GetBTType(string typeName) 
-		{
-			if(_btTypeDict.ContainsKey(typeName) == false) 
-			{
-				var type = Type.GetType($"BT.{typeName}");
-				_btTypeDict.Add(typeName, type);
-			}
-
-			return _btTypeDict[typeName];
-		}
-	}
+        }
+    }
 }

@@ -1,0 +1,163 @@
+{
+  "_key": "AI",
+  "_flatNodeDataList": [
+    {
+      "id": 0,
+      "typeName": "RootNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 443.0,
+        "y": 138.0,
+        "width": 100.0,
+        "height": 50.0
+      },
+      "methodName": null,
+      "childIds": [
+        1
+      ]
+    },
+    {
+      "id": 1,
+      "typeName": "SelectorNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 443.0,
+        "y": 211.0,
+        "width": 100.0,
+        "height": 50.0
+      },
+      "methodName": null,
+      "childIds": [
+        2,
+        5,
+        6,
+        10
+      ]
+    },
+    {
+      "id": 2,
+      "typeName": "SequenceNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 130.0,
+        "y": 289.0,
+        "width": 100.0,
+        "height": 50.0
+      },
+      "methodName": null,
+      "childIds": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": 3,
+      "typeName": "ActionNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 71.0,
+        "y": 363.0,
+        "width": 100.0,
+        "height": 70.0
+      },
+      "methodName": "HpCheck",
+      "childIds": []
+    },
+    {
+      "id": 4,
+      "typeName": "ActionNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 186.0,
+        "y": 362.0,
+        "width": 100.0,
+        "height": 70.0
+      },
+      "methodName": "Death",
+      "childIds": []
+    },
+    {
+      "id": 5,
+      "typeName": "ActionNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 331.0,
+        "y": 292.0,
+        "width": 100.0,
+        "height": 70.0
+      },
+      "methodName": "Hit",
+      "childIds": []
+    },
+    {
+      "id": 6,
+      "typeName": "ActionNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 443.0,
+        "y": 291.0,
+        "width": 100.0,
+        "height": 70.0
+      },
+      "methodName": "Detector",
+      "childIds": [
+        7
+      ]
+    },
+    {
+      "id": 7,
+      "typeName": "SelectorNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 443.0,
+        "y": 380.0,
+        "width": 100.0,
+        "height": 50.0
+      },
+      "methodName": null,
+      "childIds": [
+        8,
+        9
+      ]
+    },
+    {
+      "id": 8,
+      "typeName": "ActionNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 443.0,
+        "y": 457.0,
+        "width": 100.0,
+        "height": 70.0
+      },
+      "methodName": "Attack",
+      "childIds": []
+    },
+    {
+      "id": 9,
+      "typeName": "ActionNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 566.0,
+        "y": 457.0,
+        "width": 100.0,
+        "height": 70.0
+      },
+      "methodName": "Move",
+      "childIds": []
+    },
+    {
+      "id": 10,
+      "typeName": "ActionNode",
+      "rect": {
+        "serializedVersion": "2",
+        "x": 564.0,
+        "y": 291.0,
+        "width": 100.0,
+        "height": 70.0
+      },
+      "methodName": "Idle",
+      "childIds": []
+    }
+  ]
+}

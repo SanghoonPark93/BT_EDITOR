@@ -16,20 +16,185 @@ MonoBehaviour:
   - _key: AI
     _flatNodeDataList:
     - id: 0
-      typeName: RootNode
+      typeName: BT.RootNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      rect:
+        serializedVersion: 2
+        x: 463
+        y: 28
+        width: 100
+        height: 50
+      methodName: 
+      template:
+        rid: 3474513216720076820
+      childIds: 01000000
+    - id: 1
+      typeName: BT.SelectorNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
       rect:
         serializedVersion: 2
         x: 438
-        y: 288
-        width: 100
-        height: 50
-      childIds: 01000000
-    - id: 1
-      typeName: ConditionNode
+        y: 118
+        width: 150
+        height: 90
+      methodName: 
+      template:
+        rid: 3474513216720076821
+      childIds: 020000000500000006000000
+    - id: 2
+      typeName: BT.SequenceNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
       rect:
         serializedVersion: 2
-        x: 336
-        y: 434
+        x: 172
+        y: 248
+        width: 160
+        height: 76
+      methodName: 
+      template:
+        rid: 3474513216720076822
+      childIds: 0300000004000000
+    - id: 3
+      typeName: BT.ActionNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+      rect:
+        serializedVersion: 2
+        x: 90
+        y: 388
         width: 150
         height: 100
+      methodName: HpCheck
+      template:
+        rid: 3474513216720076823
       childIds: 
+    - id: 4
+      typeName: BT.ActionNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+      rect:
+        serializedVersion: 2
+        x: 264
+        y: 388
+        width: 150
+        height: 100
+      methodName: Death
+      template:
+        rid: 3474513216720076824
+      childIds: 
+    - id: 5
+      typeName: BT.ActionNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+      rect:
+        serializedVersion: 2
+        x: 438
+        y: 248
+        width: 150
+        height: 100
+      methodName: Hit
+      template:
+        rid: 3474513216720076825
+      childIds: 
+    - id: 6
+      typeName: BT.ActionNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+      rect:
+        serializedVersion: 2
+        x: 699
+        y: 248
+        width: 150
+        height: 100
+      methodName: Detector
+      template:
+        rid: 3474513216720076826
+      childIds: 07000000
+    - id: 7
+      typeName: BT.SelectorNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+      rect:
+        serializedVersion: 2
+        x: 699
+        y: 388
+        width: 150
+        height: 90
+      methodName: 
+      template:
+        rid: 3474513216720076827
+      childIds: 0800000009000000
+    - id: 8
+      typeName: BT.Sample.CooldownActionNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+      rect:
+        serializedVersion: 2
+        x: 612
+        y: 528
+        width: 150
+        height: 100
+      methodName: Attack
+      template:
+        rid: 3474513216720076828
+      childIds: 
+    - id: 9
+      typeName: BT.ActionNode, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+      rect:
+        serializedVersion: 2
+        x: 786
+        y: 528
+        width: 150
+        height: 100
+      methodName: Move
+      template:
+        rid: 3474513216720076829
+      childIds: 
+  references:
+    version: 2
+    RefIds:
+    - rid: 3474513216720076820
+      type: {class: RootNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: RootNode
+        _nodeType: 1
+    - rid: 3474513216720076821
+      type: {class: SelectorNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: SelectorNode
+        _nodeType: 4
+    - rid: 3474513216720076822
+      type: {class: SequenceNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: SequenceNode
+        _nodeType: 3
+    - rid: 3474513216720076823
+      type: {class: ActionNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: ActionNode
+        _nodeType: 0
+    - rid: 3474513216720076824
+      type: {class: ActionNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: ActionNode
+        _nodeType: 0
+    - rid: 3474513216720076825
+      type: {class: ActionNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: ActionNode
+        _nodeType: 0
+    - rid: 3474513216720076826
+      type: {class: ActionNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: ActionNode
+        _nodeType: 0
+    - rid: 3474513216720076827
+      type: {class: SelectorNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: SelectorNode
+        _nodeType: 4
+    - rid: 3474513216720076828
+      type: {class: CooldownActionNode, ns: BT.Sample, asm: Assembly-CSharp}
+      data:
+        _typeName: CooldownActionNode
+        _nodeType: 0
+        _cooldownSeconds: 0
+    - rid: 3474513216720076829
+      type: {class: ActionNode, ns: BT, asm: Assembly-CSharp}
+      data:
+        _typeName: ActionNode
+        _nodeType: 0

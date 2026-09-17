@@ -62,6 +62,9 @@ namespace BT.Sample
 
 		public FSMType fsmState { get; private set; }
 
+		// SampleManager initializes sample AIs in Awake.
+		protected override bool AutoInitialize => false;
+
 		public override void Initialize(string jsonName)
 		{
 			base.Initialize(jsonName);
@@ -70,8 +73,16 @@ namespace BT.Sample
 
 			_anim = GetComponentInChildren<Animator>();
 			_navi = GetComponent<NavMeshAgent>();
-			_detector = GetComponentInChildren<Detector>();
+			_detector = GetComponentInChildren<Detector>(true);
 			_hp = 5;
+
+			if (_anim == null || _navi == null || _detector == null)
+			{
+				Debug.LogError("AITest requires Animator, NavMeshAgent, and a child Detector.", this);
+				_btRoot = null;
+				_isStop = true;
+				return;
+			}
 
 			_detector.onFilter -= HasHead;
 			_detector.onFilter += HasHead;
